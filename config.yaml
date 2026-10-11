@@ -1,0 +1,125 @@
+# =============================================================
+# DailyBrief – config.yaml
+# Todas as configurações editáveis do pipeline de notícias
+# =============================================================
+
+# ── Coleta ────────────────────────────────────────────────────
+collection:
+  lookback_hours: 24          # janela de tempo para considerar itens "do dia"
+  max_items_per_source: 30    # limite por fonte antes de deduplicar
+  max_high_relevance: 30      # máximo de itens com relevância >= 4 para resumo completo
+  relevance_threshold: 4      # mínimo de relevância para gerar resumo_materia
+
+# ── Hacker News ───────────────────────────────────────────────
+hacker_news:
+  enabled: true
+  top_stories_limit: 30       # quantos dos top stories buscar
+  max_comments: 30            # máx comentários por post
+
+# ── Reddit ────────────────────────────────────────────────────
+reddit:
+  enabled: true
+  user_agent: "DailyBrief/1.0 (automated news digest; contact via GitHub)"
+  max_comments: 30
+  subreddits:
+    - name: worldnews
+      flair_filter: null
+    - name: technology
+      flair_filter: null
+    - name: artificial
+      flair_filter: null
+    - name: gaming
+      flair_filter: null
+    - name: anime
+      flair_filter: null
+    - name: science
+      flair_filter: null
+    - name: brasil
+      flair_filter: null
+    - name: brdev
+      flair_filter: null
+
+# ── Feeds RSS ─────────────────────────────────────────────────
+rss_feeds:
+  - name: "BBC Brasil"
+    url: "https://www.bbc.com/portuguese/index.xml"
+    category_hint: "politica_internacional"
+
+  - name: "G1 - Política"
+    url: "https://g1.globo.com/rss/g1/politica/index.xml"
+    category_hint: "politica_nacional"
+
+  - name: "G1 - Tecnologia"
+    url: "https://g1.globo.com/rss/g1/tecnologia/index.xml"
+    category_hint: "tecnologia"
+
+  - name: "CNN Brasil"
+    url: "https://www.cnnbrasil.com.br/feed/"
+    category_hint: "politica_nacional"
+
+  - name: "UOL Notícias"
+    url: "https://rss.uol.com.br/feed/noticias.xml"
+    category_hint: "outros"
+
+  - name: "Reuters Technology"
+    url: "https://feeds.reuters.com/reuters/technologyNews"
+    category_hint: "tecnologia"
+
+  - name: "TechCrunch"
+    url: "https://techcrunch.com/feed/"
+    category_hint: "tecnologia"
+
+  - name: "The Verge"
+    url: "https://www.theverge.com/rss/index.xml"
+    category_hint: "tecnologia"
+
+  - name: "Ars Technica"
+    url: "https://feeds.arstechnica.com/arstechnica/index"
+    category_hint: "tecnologia"
+
+  - name: "MIT Technology Review"
+    url: "https://www.technologyreview.com/feed/"
+    category_hint: "ia"
+
+  - name: "Nature News"
+    url: "https://www.nature.com/nature.rss"
+    category_hint: "ciencia"
+
+# ── Extração de texto ─────────────────────────────────────────
+extraction:
+  max_chars: 6000             # limite de caracteres do corpo da matéria
+  timeout_seconds: 15         # timeout do HTTP para buscar a página
+
+# ── LLM ───────────────────────────────────────────────────────
+llm:
+  rate_limit_pause_seconds: 1.5   # pausa entre chamadas ao LLM
+  max_retries_per_provider: 2     # tentativas antes de trocar de provedor
+  json_fix_retries: 2             # tentativas para obter JSON válido
+  backoff_base_seconds: 2         # base do backoff exponencial
+
+  providers:
+    - name: "gemini"
+      model: "gemini-2.0-flash"
+      env_key: "GEMINI_API_KEY"
+
+    - name: "groq"
+      model: "llama-3.3-70b-versatile"
+      env_key: "GROQ_API_KEY"
+
+# ── Temas permitidos ──────────────────────────────────────────
+themes:
+  - politica_nacional
+  - politica_internacional
+  - tecnologia
+  - ia
+  - games
+  - animes
+  - ciencia
+  - economia
+  - outros
+
+# ── Site ──────────────────────────────────────────────────────
+site:
+  title: "DailyBrief"
+  description: "Resumo diário de notícias gerado por IA"
+  timezone: "America/Sao_Paulo"

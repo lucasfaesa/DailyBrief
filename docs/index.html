@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0f172a" />
+  <meta name="description" content="Resumo diário de notícias gerado por IA" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="DailyBrief" />
+
+  <title>DailyBrief</title>
+
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+
+  <!-- Preload crítico -->
+  <link rel="preload" href="data.json" as="fetch" crossorigin />
+</head>
+<body>
+
+  <!-- ── Header ─────────────────────────────────────── -->
+  <header id="app-header">
+    <div class="header-inner">
+      <div class="header-title">
+        <span class="logo">📰</span>
+        <h1>DailyBrief</h1>
+      </div>
+      <div class="header-actions">
+        <button id="btn-archive" class="btn-icon" title="Dias anteriores" aria-label="Dias anteriores">
+          🗂️
+        </button>
+        <button id="btn-install" class="btn-icon hidden" title="Instalar app" aria-label="Instalar">
+          ⬇️
+        </button>
+      </div>
+    </div>
+    <p id="generated-at" class="generated-at"></p>
+  </header>
+
+  <!-- ── Conteúdo principal ─────────────────────────── -->
+  <main id="app-main">
+
+    <!-- Tela de carregamento -->
+    <div id="loading" class="loading-screen" aria-live="polite">
+      <div class="spinner"></div>
+      <p>Carregando notícias…</p>
+    </div>
+
+    <!-- Tela de erro -->
+    <div id="error-screen" class="hidden error-screen" role="alert">
+      <span class="error-icon">⚠️</span>
+      <p id="error-msg">Erro ao carregar notícias.</p>
+      <button onclick="App.loadData()" class="btn-retry">Tentar novamente</button>
+    </div>
+
+    <!-- Lista de notícias (home) -->
+    <div id="home-view" class="hidden">
+      <!-- Abas de tema -->
+      <nav id="theme-tabs" class="theme-tabs" role="tablist" aria-label="Temas"></nav>
+      <!-- Seções de tema -->
+      <div id="theme-sections"></div>
+    </div>
+
+    <!-- Detalhe do item -->
+    <div id="detail-view" class="hidden detail-view" role="region" aria-label="Detalhe da notícia">
+      <button id="btn-back" class="btn-back" onclick="App.goHome()">← Voltar</button>
+      <article id="detail-content"></article>
+    </div>
+
+    <!-- Painel de arquivo -->
+    <div id="archive-view" class="hidden archive-view" role="region" aria-label="Arquivo">
+      <button class="btn-back" onclick="App.goHome()">← Voltar</button>
+      <h2>Dias anteriores</h2>
+      <div id="archive-list" class="archive-list"></div>
+    </div>
+
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
