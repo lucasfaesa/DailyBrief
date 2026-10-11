@@ -1,9 +1,9 @@
 /* ================================================================
-   DailyBrief – sw.js  (Service Worker)
-   Estratégia:
-     - App shell (HTML/CSS/JS): Cache-first, atualiza em background
-     - data.json: Network-first, fallback para cache
-     - Imagens / ícones: Cache-first
+   DailyBrief – sw.js (Service Worker)
+   Caching Strategy:
+     - App Shell (HTML/CSS/JS/icons): Cache-first with background revalidation
+     - data.json & archive/*.json: Network-first with offline cache fallback
+     - External asset links: Handled natively
    ================================================================ */
 
 const CACHE_VERSION = 'dailybrief-v1';
@@ -17,7 +17,7 @@ const SHELL_ASSETS = [
   './icons/icon-512.png',
 ];
 
-// ── Instalação: pré-cache do shell ──────────────────────────────
+// ── Install: Pre-cache App Shell ─────────────────────────────────
 self.addEventListener('install', event => {
   self.skipWaiting();
   event.waitUntil(
@@ -25,7 +25,7 @@ self.addEventListener('install', event => {
   );
 });
 
-// ── Ativação: limpa caches antigos ─────────────────────────────
+// ── Activate: Purge Stale Caches ─────────────────────────────────
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
@@ -34,15 +34,15 @@ self.addEventListener('activate', event => {
   );
 });
 
-// ── Fetch: roteamento de cache ──────────────────────────────────
+// ── Fetch: Route Requests ────────────────────────────────────────
 self.addEventListener('fetch', event => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Apenas GET e mesma origem (ou CDN confiável)
+  // Intercept only GET requests originating from same origin
   if (request.method !== 'GET') return;
 
-  // data.json e arquivos: Network-first
+  // JSON payloads: Network-first
   if (url.pathname.endsWith('data.json') || url.pathname.includes('/archive/')) {
     event.respondWith(networkFirst(request));
     return;
@@ -63,7 +63,7 @@ async function cacheFirst(request) {
     }
     return response;
   } catch {
-    return new Response('Offline – recurso não disponível', { status: 503 });
+    return new Response('Offline – resource unavailable', { status: 503 });
   }
 }
 

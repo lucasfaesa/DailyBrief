@@ -1,6 +1,6 @@
 """
-collect.py – Coleta notícias do Hacker News, Reddit e feeds RSS.
-Retorna uma lista de dicts normalizados, deduplicada por URL.
+collect.py – Ingests news stories from Hacker News, Reddit, and RSS feeds.
+Returns a normalized list of item dictionaries deduplicated by URL.
 """
 from __future__ import annotations
 
@@ -10,13 +10,14 @@ import time
 from datetime import datetime, timezone, timedelta
 from typing import Any
 from urllib.parse import urlparse
+import re
 
 import feedparser
 import requests
 
 logger = logging.getLogger(__name__)
 
-# ── Tipos ──────────────────────────────────────────────────────────────────
+# ── Types ──────────────────────────────────────────────────────────────────
 
 def make_item(
     url: str,
@@ -25,10 +26,10 @@ def make_item(
     published: datetime | None = None,
     comments: list[str] | None = None,
     description: str = "",
-    category_hint: str = "outros",
+    category_hint: str = "others",
 ) -> dict[str, Any]:
-    """Cria um item normalizado."""
-    # ID estável baseado na URL
+    """Creates a normalized news item."""
+    # Stable 12-char ID derived from URL
     item_id = hashlib.sha1(url.encode()).hexdigest()[:12]
     return {
         "id": item_id,
@@ -39,7 +40,7 @@ def make_item(
         "comments": comments or [],
         "description": description.strip(),
         "category_hint": category_hint,
-        # Preenchido pelo pipeline de LLM:
+        # Populated by LLM pipeline:
         "tema": None,
         "resumo_curto": None,
         "relevancia": None,
@@ -56,7 +57,7 @@ def _http_get(url: str, headers: dict | None = None, timeout: int = 15) -> reque
         resp.raise_for_status()
         return resp
     except Exception as exc:
-        logger.warning("GET %s falhou: %s", url, exc)
+        logger.warning("GET %s failed: %s", url, exc)
         return None
 
 
@@ -66,14 +67,14 @@ def _cutoff(hours: int) -> datetime:
 
 def _within(ts: float | None, cutoff: datetime) -> bool:
     if ts is None:
-        return True  # sem data → incluir (melhor ter a mais do que perder)
+        return True  # Missing timestamp → include rather than omit
     return datetime.fromtimestamp(ts, tz=timezone.utc) >= cutoff
 
 
 # ── Hacker News ────────────────────────────────────────────────────────────
 
 def collect_hn(cfg: dict) -> list[dict]:
-    """Coleta os top stories do Hacker News."""
+    """Collects top stories and root comments from Hacker News."""
     limit: int = cfg["hacker_news"]["top_stories_limit"]
     max_comments: int = cfg["hacker_news"]["max_comments"]
     lookback: int = cfg["collection"]["lookback_hours"]
@@ -101,7 +102,7 @@ def collect_hn(cfg: dict) -> list[dict]:
         if not title:
             continue
 
-        # Comentários: apenas texto plano dos filhos diretos
+        # Collect direct child comment texts
         comments: list[str] = []
         for kid_id in (data.get("kids") or [])[:max_comments]:
             kr = _http_get(f"https://hacker-news.firebaseio.com/v0/item/{kid_id}.json")
@@ -109,12 +110,10 @@ def collect_hn(cfg: dict) -> list[dict]:
                 continue
             kid = kr.json()
             if kid and kid.get("text"):
-                # Remove tags HTML simples
                 text = kid["text"].replace("<p>", "\n").replace("</p>", "")
-                import re
                 text = re.sub(r"<[^>]+>", "", text)
                 comments.append(text.strip())
-            time.sleep(0.05)  # respeita a API
+            time.sleep(0.05)  # Respect API limits
 
         published = datetime.fromtimestamp(data["time"], tz=timezone.utc) if data.get("time") else None
         items.append(make_item(
@@ -123,18 +122,18 @@ def collect_hn(cfg: dict) -> list[dict]:
             source="Hacker News",
             published=published,
             comments=comments,
-            description=f"HN score: {data.get('score', 0)} | {data.get('descendants', 0)} comentários",
-            category_hint="tecnologia",
+            description=f"HN score: {data.get('score', 0)} | {data.get('descendants', 0)} comments",
+            category_hint="technology",
         ))
 
-    logger.info("HN: %d itens coletados", len(items))
+    logger.info("HN: collected %d items", len(items))
     return items
 
 
 # ── Reddit ─────────────────────────────────────────────────────────────────
 
 def collect_reddit(cfg: dict) -> list[dict]:
-    """Coleta posts do Reddit via RSS e tenta buscar comentários via JSON."""
+    """Collects top posts via Reddit RSS and fetches top comments via .json endpoints."""
     if not cfg["reddit"]["enabled"]:
         return []
 
@@ -164,7 +163,7 @@ def collect_reddit(cfg: dict) -> list[dict]:
 
             published = datetime.fromtimestamp(pub_ts, tz=timezone.utc) if pub_ts else None
 
-            # Tenta buscar comentários via JSON
+            # Attempt fetching top comments via JSON
             comments: list[str] = []
             try:
                 json_url = link.rstrip("/") + ".json?limit=100&sort=top"
@@ -177,7 +176,7 @@ def collect_reddit(cfg: dict) -> list[dict]:
                         if body and body not in ("[deleted]", "[removed]"):
                             comments.append(body.strip())
             except Exception:
-                pass  # comentários são opcionais
+                pass  # Comments are optional
 
             description = entry.get("summary", "")[:500]
             items.append(make_item(
@@ -187,19 +186,19 @@ def collect_reddit(cfg: dict) -> list[dict]:
                 published=published,
                 comments=comments,
                 description=description,
-                category_hint="outros",
+                category_hint="others",
             ))
 
-        time.sleep(0.5)  # respeita rate limit do Reddit
+        time.sleep(0.5)  # Respect Reddit rate limit
 
-    logger.info("Reddit: %d itens coletados", len(items))
+    logger.info("Reddit: collected %d items", len(items))
     return items
 
 
 # ── RSS Feeds ──────────────────────────────────────────────────────────────
 
 def collect_rss(cfg: dict) -> list[dict]:
-    """Coleta itens de feeds RSS configurados."""
+    """Ingests news entries from configured RSS feeds."""
     limit_per: int = cfg["collection"]["max_items_per_source"]
     lookback: int = cfg["collection"]["lookback_hours"]
     cutoff = _cutoff(lookback)
@@ -209,12 +208,12 @@ def collect_rss(cfg: dict) -> list[dict]:
     for feed_cfg in cfg.get("rss_feeds", []):
         name: str = feed_cfg["name"]
         url: str = feed_cfg["url"]
-        hint: str = feed_cfg.get("category_hint", "outros")
+        hint: str = feed_cfg.get("category_hint", "others")
 
         try:
             feed = feedparser.parse(url)
         except Exception as exc:
-            logger.warning("RSS %s falhou: %s", name, exc)
+            logger.warning("RSS feed %s failed: %s", name, exc)
             continue
 
         count = 0
@@ -245,29 +244,29 @@ def collect_rss(cfg: dict) -> list[dict]:
             ))
             count += 1
 
-    logger.info("RSS: %d itens coletados", len(items))
+    logger.info("RSS: collected %d items", len(items))
     return items
 
 
-# ── Deduplicação ───────────────────────────────────────────────────────────
+# ── Deduplication ──────────────────────────────────────────────────────────
 
 def deduplicate(items: list[dict]) -> list[dict]:
-    """Remove itens com URLs duplicadas, mantendo o primeiro encontrado."""
+    """Removes duplicate URLs, retaining first discovered item."""
     seen: set[str] = set()
     result: list[dict] = []
     for item in items:
-        url = item["url"].split("?")[0].rstrip("/")  # normaliza URL
+        url = item["url"].split("?")[0].rstrip("/")
         if url not in seen:
             seen.add(url)
             result.append(item)
-    logger.info("Após deduplicação: %d itens únicos", len(result))
+    logger.info("Deduplication result: %d unique items", len(result))
     return result
 
 
-# ── Ponto de entrada ───────────────────────────────────────────────────────
+# ── Entrypoint ─────────────────────────────────────────────────────────────
 
 def collect_all(cfg: dict) -> list[dict]:
-    """Coleta todas as fontes e retorna lista deduplicada."""
+    """Collects news across all configured sources."""
     all_items: list[dict] = []
 
     if cfg["hacker_news"]["enabled"]:

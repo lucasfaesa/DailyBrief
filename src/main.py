@@ -1,12 +1,12 @@
 """
-main.py – Ponto de entrada do pipeline DailyBrief.
+main.py – Main orchestrator for the DailyBrief pipeline.
 
-Fluxo:
-  1. Carregar config.yaml
-  2. Coletar notícias (HN + Reddit + RSS)
-  3. Processar via LLM (classificar + resumir)
-  4. Salvar docs/data.json e docs/archive/YYYY-MM-DD.json
-  5. Commit automático pelo GitHub Actions
+Execution flow:
+  1. Load config.yaml
+  2. Collect news items (Hacker News + Reddit + RSS)
+  3. Process through LLM (classify + summarize)
+  4. Write docs/data.json and docs/archive/YYYY-MM-DD.json
+  5. Automatic git commit handled by GitHub Actions
 """
 from __future__ import annotations
 
@@ -19,14 +19,14 @@ from pathlib import Path
 
 import yaml
 
-# Garante que o diretório src/ está no path
+# Ensure src/ is on sys.path
 sys.path.insert(0, str(Path(__file__).parent))
 
 from collect import collect_all
 from llm import LLMRouter
 from pipeline import process_items
 
-# ── Logging ───────────────────────────────────────────────────────────────
+# ── Logging Setup ─────────────────────────────────────────────────────────
 
 logging.basicConfig(
     level=logging.INFO,
@@ -44,29 +44,31 @@ def load_config(path: Path) -> dict:
 
 
 def group_by_theme(items: list[dict]) -> dict[str, list[dict]]:
-    """Agrupa itens por tema, ordenados por relevância decrescente."""
+    """Groups items by theme, ordered by relevance descending."""
     grouped: dict[str, list[dict]] = {}
     for item in items:
-        tema = item.get("tema") or "outros"
-        grouped.setdefault(tema, []).append(item)
-    # Ordena cada grupo por relevância
-    for tema in grouped:
-        grouped[tema].sort(key=lambda x: x.get("relevancia") or 0, reverse=True)
+        theme = item.get("theme") or item.get("tema") or "others"
+        grouped.setdefault(theme, []).append(item)
+    for theme in grouped:
+        grouped[theme].sort(
+            key=lambda x: x.get("relevance") or x.get("relevancia") or 0,
+            reverse=True,
+        )
     return grouped
 
 
 def build_output(items: list[dict], generated_at: str) -> dict:
-    """Monta o objeto data.json."""
+    """Constructs the data.json payload."""
     grouped = group_by_theme(items)
-    # Remove campos internos (comments brutos) para não inflar o JSON
+    # Strip raw comment strings to keep output lean
     clean_items = []
     for item in items:
         clean = {k: v for k, v in item.items() if k != "comments"}
         clean_items.append(clean)
 
     clean_grouped: dict[str, list[dict]] = {}
-    for tema, tema_items in grouped.items():
-        clean_grouped[tema] = [{k: v for k, v in i.items() if k != "comments"} for i in tema_items]
+    for theme, theme_items in grouped.items():
+        clean_grouped[theme] = [{k: v for k, v in i.items() if k != "comments"} for i in theme_items]
 
     return {
         "generated_at": generated_at,
@@ -80,11 +82,11 @@ def save_json(data: dict, path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
-    logger.info("Salvo: %s", path)
+    logger.info("Saved: %s", path)
 
 
 def update_archive_index(archive_dir: Path) -> None:
-    """Mantém docs/archive/index.json com lista de datas disponíveis."""
+    """Maintains docs/archive/index.json with list of available dates."""
     index_path = archive_dir / "index.json"
 
     dates: list[dict] = []
@@ -103,39 +105,37 @@ def update_archive_index(archive_dir: Path) -> None:
     save_json({"dates": dates}, index_path)
 
 
-# ── Main ──────────────────────────────────────────────────────────────────
+# ── Main Entrypoint ───────────────────────────────────────────────────────
 
 def main() -> None:
     repo_root = Path(__file__).parent.parent
     config_path = repo_root / "config.yaml"
     docs_dir = repo_root / "docs"
 
-    logger.info("=== DailyBrief Pipeline iniciado ===")
+    logger.info("=== DailyBrief Pipeline Started ===")
 
     # 1. Config
     cfg = load_config(config_path)
 
-    # 2. Coleta
-    logger.info("--- Etapa 1: Coleta ---")
+    # 2. Ingestion
+    logger.info("--- Step 1: News Collection ---")
     items = collect_all(cfg)
-    logger.info("Total coletado: %d itens", len(items))
+    logger.info("Total items gathered: %d", len(items))
 
     if not items:
-        logger.warning("Nenhum item coletado. Abortando.")
-        # Publica data.json vazio para não quebrar o site
+        logger.warning("No items collected. Writing empty payload.")
         generated_at = datetime.now(timezone.utc).isoformat()
         output = build_output([], generated_at)
         save_json(output, docs_dir / "data.json")
         return
 
-    # 3. LLM
-    logger.info("--- Etapa 2: Processamento LLM ---")
+    # 3. LLM Pipeline
+    logger.info("--- Step 2: LLM Classification & Summaries ---")
     router = LLMRouter(cfg)
     items = process_items(items, cfg, router)
 
-    # 4. Saída
-    logger.info("--- Etapa 3: Salvando saídas ---")
-    # Usa horário de São Paulo para o nome do arquivo de arquivo
+    # 4. Persistence
+    logger.info("--- Step 3: Writing Output Payloads ---")
     sp_offset = timedelta(hours=-3)
     now_sp = datetime.now(timezone.utc).astimezone(timezone(sp_offset))
     date_str = now_sp.strftime("%Y-%m-%d")
@@ -143,17 +143,17 @@ def main() -> None:
 
     output = build_output(items, generated_at)
 
-    # data.json (atual)
+    # Active daily feed
     save_json(output, docs_dir / "data.json")
 
-    # Archive
+    # Historical archive
     archive_path = docs_dir / "archive" / f"{date_str}.json"
     save_json(output, archive_path)
 
-    # Atualiza índice de arquivos
+    # Archive index catalog
     update_archive_index(docs_dir / "archive")
 
-    logger.info("=== Pipeline concluído: %d itens processados ===", len(items))
+    logger.info("=== Pipeline Completed: %d items processed ===", len(items))
 
 
 if __name__ == "__main__":

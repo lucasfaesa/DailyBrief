@@ -1,27 +1,24 @@
 #!/usr/bin/env python3
 """
-generate_icons.py – Gera ícones PNG simples para o PWA.
-Executar uma vez manualmente ou via CI se necessário.
-Requer: Pillow (pip install Pillow)
-
-Uso: python3 generate_icons.py
+generate_icons.py – Generates simple PNG icons for the PWA.
+Run manually or via CI when icons need updating.
+Optional: Pillow (pip install Pillow)
 """
 import os
 import sys
 
 try:
-    from PIL import Image, ImageDraw, ImageFont
+    from PIL import Image, ImageDraw
     USE_PILLOW = True
 except ImportError:
     USE_PILLOW = False
 
 
 def create_icon_pillow(size: int, path: str) -> None:
-    """Cria ícone com Pillow (qualidade superior)."""
+    """Creates a high-quality icon using Pillow."""
     img = Image.new("RGBA", (size, size), (15, 23, 42, 255))  # --bg: #0f172a
     draw = ImageDraw.Draw(img)
 
-    # Fundo arredondado
     margin = size // 8
     draw.rounded_rectangle(
         [margin, margin, size - margin, size - margin],
@@ -29,19 +26,18 @@ def create_icon_pillow(size: int, path: str) -> None:
         fill=(30, 41, 59, 255),  # --bg-card: #1e293b
     )
 
-    # Símbolo "📰" simplificado: retângulo claro (manchete) + linhas
     inner_x = margin * 2
     inner_y = margin * 2
     inner_w = size - margin * 4
     line_h = max(2, size // 32)
 
-    # Manchete
+    # Accent header bar
     draw.rectangle(
         [inner_x, inner_y, inner_x + inner_w, inner_y + size // 6],
         fill=(56, 189, 248, 255),  # --accent: #38bdf8
     )
 
-    # Linhas de texto
+    # Content lines
     y = inner_y + size // 6 + margin // 2
     for _ in range(5):
         if y + line_h < size - margin * 2:
@@ -49,11 +45,11 @@ def create_icon_pillow(size: int, path: str) -> None:
             y += line_h + max(2, size // 20)
 
     img.save(path, "PNG")
-    print(f"  ✓ {path} ({size}×{size})")
+    print(f"  ✓ {path} ({size}x{size})")
 
 
 def create_icon_basic(size: int, path: str) -> None:
-    """Cria PNG básico sem dependências externas."""
+    """Creates a basic PNG icon using stdlib only."""
     import struct, zlib
 
     width = height = size
@@ -68,10 +64,8 @@ def create_icon_basic(size: int, path: str) -> None:
             margin = size // 8
             if margin <= x <= size - margin and margin <= y <= size - margin:
                 r, g, b = (30, 41, 59)
-                # faixa de destaque no topo
                 if y < margin + size // 6:
                     r, g, b = accent
-                # linhas de texto
                 elif (y - margin) % (size // 16) < size // 32:
                     r, g, b = (94, 113, 130)
             raw += bytes([r, g, b, 255])
@@ -88,7 +82,7 @@ def create_icon_basic(size: int, path: str) -> None:
 
     with open(path, 'wb') as f:
         f.write(png)
-    print(f"  ✓ {path} ({size}×{size}) [basic]")
+    print(f"  ✓ {path} ({size}x{size}) [basic]")
 
 
 if __name__ == '__main__':
@@ -102,4 +96,4 @@ if __name__ == '__main__':
         else:
             create_icon_basic(size, dest)
 
-    print("Ícones gerados com sucesso!")
+    print("Icons generated successfully!")

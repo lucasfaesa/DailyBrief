@@ -1,6 +1,6 @@
 /* ================================================================
    DailyBrief – style.css
-   Mobile-first, tema escuro automático via prefers-color-scheme
+   Mobile-first, automated dark/light mode via prefers-color-scheme
    ================================================================ */
 
 /* ── Reset & Base ────────────────────────────────────────────── */
@@ -28,7 +28,7 @@
   --transition:   0.18s ease;
 }
 
-/* Tema claro opcional */
+/* Light Theme */
 @media (prefers-color-scheme: light) {
   :root {
     --bg:           #f1f5f9;
@@ -161,7 +161,7 @@ h1 {
   margin-top: 8px;
 }
 
-/* ── Abas de tema ────────────────────────────────────────────── */
+/* ── Topic Tabs ──────────────────────────────────────────────── */
 .theme-tabs {
   display: flex;
   gap: 6px;
@@ -198,7 +198,7 @@ h1 {
   font-weight: 700;
 }
 
-/* ── Seções de tema ──────────────────────────────────────────── */
+/* ── Topic Sections ──────────────────────────────────────────── */
 .theme-section { margin-bottom: 4px; }
 
 .theme-header {
@@ -226,7 +226,7 @@ h1 {
 .theme-section.collapsed .theme-chevron { transform: rotate(-90deg); }
 .theme-section.collapsed .theme-items { display: none; }
 
-/* ── Cards de notícia ────────────────────────────────────────── */
+/* ── News Cards ──────────────────────────────────────────────── */
 .theme-items {
   display: flex;
   flex-direction: column;
@@ -295,7 +295,7 @@ h1 {
 }
 .dot.filled { background: var(--accent); }
 
-/* ── Detalhe ─────────────────────────────────────────────────── */
+/* ── Detail View ─────────────────────────────────────────────── */
 .detail-view { padding: 0 16px; }
 
 .btn-back {
@@ -369,7 +369,7 @@ h1 {
 }
 .btn-open:hover { background: var(--accent-dim); }
 
-/* ── Arquivo ─────────────────────────────────────────────────── */
+/* ── Archive Explorer ────────────────────────────────────────── */
 .archive-view { padding: 0 16px; }
 .archive-view h2 { padding: 8px 0 16px; font-size: 1.1rem; }
 
@@ -390,10 +390,10 @@ h1 {
 .archive-date { font-weight: 600; }
 .archive-count { font-size: 0.82rem; color: var(--text-muted); }
 
-/* ── Utilidades ──────────────────────────────────────────────── */
+/* ── Utility Classes ─────────────────────────────────────────── */
 .hidden { display: none !important; }
 
-/* ── Responsive tweaks ───────────────────────────────────────── */
+/* ── Responsive Rules ────────────────────────────────────────── */
 @media (min-width: 480px) {
   .card-title { font-size: 1rem; }
   .card-summary { font-size: 0.87rem; }

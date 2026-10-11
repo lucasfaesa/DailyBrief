@@ -4,6 +4,8 @@ on:
   schedule:
     # 07:00 America/Sao_Paulo = 10:00 UTC
     - cron: "0 10 * * *"
+    # 20:00 America/Sao_Paulo = 23:00 UTC
+    - cron: "0 23 * * *"
   workflow_dispatch:
 
 permissions:
@@ -15,7 +17,7 @@ jobs:
     timeout-minutes: 30
 
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
@@ -29,17 +31,17 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Run pipeline
+      - name: Run news digest pipeline
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
         run: python src/main.py
 
-      - name: Commit and push docs/
+      - name: Commit and push generated docs/
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add docs/
-          # Só faz commit se houver mudanças
+          # Only commit when changes are staged
           git diff --cached --quiet || git commit -m "chore: daily digest $(date -u +'%Y-%m-%d')"
           git push

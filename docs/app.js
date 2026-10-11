@@ -1,30 +1,39 @@
 /* ================================================================
    DailyBrief – app.js
-   SPA leve com roteamento por hash, carregamento de data.json,
-   suporte a arquivo e integração com Service Worker / PWA.
+   Lightweight SPA with hash-based routing, data.json loader,
+   archive explorer, and Service Worker / PWA integration.
    ================================================================ */
 
 'use strict';
 
-// ── Mapeamento de temas (chave → rótulo PT-BR + emoji) ─────────
+// ── Theme Mapping (Key → English Label + Icon) ──────────────────
 const THEME_LABELS = {
-  politica_nacional:       { label: 'Política Nacional',       icon: '🇧🇷' },
-  politica_internacional:  { label: 'Política Internacional',  icon: '🌍' },
-  tecnologia:              { label: 'Tecnologia',               icon: '💻' },
-  ia:                      { label: 'Inteligência Artificial',  icon: '🤖' },
-  games:                   { label: 'Games',                    icon: '🎮' },
-  animes:                  { label: 'Animes',                   icon: '🎌' },
-  ciencia:                 { label: 'Ciência',                  icon: '🔬' },
-  economia:                { label: 'Economia',                 icon: '📈' },
-  outros:                  { label: 'Outros',                   icon: '🌐' },
+  national_politics:      { label: 'National Politics',       icon: '🏛️' },
+  international_politics: { label: 'World News',              icon: '🌍' },
+  technology:             { label: 'Technology',              icon: '💻' },
+  ai:                     { label: 'Artificial Intelligence',  icon: '🤖' },
+  gaming:                 { label: 'Gaming',                  icon: '🎮' },
+  anime:                  { label: 'Anime & Manga',           icon: '🎌' },
+  science:                { label: 'Science',                 icon: '🔬' },
+  economy:                { label: 'Economy & Markets',       icon: '📈' },
+  others:                 { label: 'General News',            icon: '🌐' },
+  // Backwards compatibility keys
+  politica_nacional:      { label: 'National Politics',       icon: '🏛️' },
+  politica_internacional: { label: 'World News',              icon: '🌍' },
+  tecnologia:             { label: 'Technology',              icon: '💻' },
+  games:                  { label: 'Gaming',                  icon: '🎮' },
+  animes:                 { label: 'Anime & Manga',           icon: '🎌' },
+  ciencia:                { label: 'Science',                 icon: '🔬' },
+  economia:               { label: 'Economy & Markets',       icon: '📈' },
+  outros:                 { label: 'General News',            icon: '🌐' },
 };
 
-// ── Estado global ───────────────────────────────────────────────
-let _data = null;       // data.json carregado
-let _allItems = {};     // mapa id → item
+// ── Global State ────────────────────────────────────────────────
+let _data = null;
+let _allItems = {};
 let _activeTheme = null;
 
-// ── Elementos DOM ───────────────────────────────────────────────
+// ── DOM Elements ────────────────────────────────────────────────
 const $ = id => document.getElementById(id);
 
 const els = {
@@ -43,7 +52,7 @@ const els = {
   btnInstall:     $('btn-install'),
 };
 
-// ── Utilitários ─────────────────────────────────────────────────
+// ── Utilities ───────────────────────────────────────────────────
 
 function show(el) { el.classList.remove('hidden'); }
 function hide(el) { el.classList.add('hidden'); }
@@ -55,7 +64,7 @@ function showOnly(...toShow) {
 function formatDate(iso) {
   if (!iso) return '';
   try {
-    return new Intl.DateTimeFormat('pt-BR', {
+    return new Intl.DateTimeFormat('en-US', {
       dateStyle: 'full', timeStyle: 'short', timeZone: 'America/Sao_Paulo'
     }).format(new Date(iso));
   } catch { return iso; }
@@ -75,7 +84,7 @@ function dots(relevance) {
   ).join('');
 }
 
-// ── Carregamento de dados ───────────────────────────────────────
+// ── Data Fetching ───────────────────────────────────────────────
 
 async function loadJSON(path) {
   const resp = await fetch(path, { cache: 'no-store' });
@@ -94,32 +103,36 @@ async function loadData(path = 'data.json') {
     renderHome();
   } catch (err) {
     console.error(err);
-    els.errorMsg.textContent = 'Não foi possível carregar as notícias. Verifique sua conexão.';
+    els.errorMsg.textContent = 'Unable to load stories. Please check your connection.';
     showOnly(els.error);
   }
 }
 
-// ── Renderização da Home ────────────────────────────────────────
+// ── Home View Rendering ─────────────────────────────────────────
 
 function renderHome() {
   const themes = _data.themes || {};
   const orderedKeys = Object.keys(THEME_LABELS).filter(k => themes[k]?.length);
 
-  // Cabeçalho
+  // Unique normalized keys to prevent duplicate tabs
+  const renderedThemes = new Set();
+
   if (_data.generated_at) {
-    els.generatedAt.textContent = `Atualizado em ${formatDate(_data.generated_at)}`;
+    els.generatedAt.textContent = `Updated on ${formatDate(_data.generated_at)}`;
   }
 
-  // Abas
+  // Filter Tabs
   els.tabs.innerHTML = '';
   const allTab = document.createElement('button');
   allTab.className = 'tab-btn active';
-  allTab.textContent = '🗞️ Todos';
+  allTab.textContent = '🗞️ All';
   allTab.dataset.theme = 'all';
   allTab.addEventListener('click', () => activateTab('all'));
   els.tabs.appendChild(allTab);
 
   orderedKeys.forEach(key => {
+    if (renderedThemes.has(key)) return;
+    renderedThemes.add(key);
     const meta = THEME_LABELS[key];
     const btn = document.createElement('button');
     btn.className = 'tab-btn';
@@ -129,7 +142,7 @@ function renderHome() {
     els.tabs.appendChild(btn);
   });
 
-  // Seções
+  // Topic Sections
   els.sections.innerHTML = '';
   orderedKeys.forEach(key => {
     const items = themes[key] || [];
@@ -180,14 +193,17 @@ function activateTab(theme) {
 function buildCard(item) {
   const btn = document.createElement('button');
   btn.className = 'news-card';
-  btn.setAttribute('aria-label', `Abrir notícia: ${item.title}`);
+  btn.setAttribute('aria-label', `View story: ${item.title}`);
+  const summary = item.short_summary || item.resumo_curto;
+  const relevance = item.relevance || item.relevancia || 0;
+
   btn.innerHTML = `
     <p class="card-title">${escHtml(item.title)}</p>
-    ${item.resumo_curto ? `<p class="card-summary">${escHtml(item.resumo_curto)}</p>` : ''}
+    ${summary ? `<p class="card-summary">${escHtml(summary)}</p>` : ''}
     <div class="card-meta">
       <span class="tag-source">${escHtml(item.source)}</span>
-      <div class="relevance-dots" aria-label="Relevância ${item.relevancia || 0} de 5">
-        ${dots(item.relevancia || 0)}
+      <div class="relevance-dots" aria-label="Relevance ${relevance} of 5">
+        ${dots(relevance)}
       </div>
     </div>
   `;
@@ -197,7 +213,7 @@ function buildCard(item) {
   return btn;
 }
 
-// ── Renderização de Detalhe ─────────────────────────────────────
+// ── Detail View Rendering ───────────────────────────────────────
 
 function renderDetail(id) {
   const item = _allItems[id];
@@ -206,45 +222,50 @@ function renderDetail(id) {
     return;
   }
 
+  const relevance = item.relevance || item.relevancia || 0;
+  const articleSummary = item.article_summary || item.resumo_materia;
+  const shortSummary = item.short_summary || item.resumo_curto;
+  const commentsSummary = item.comments_summary || item.resumo_comentarios;
+
   let html = `
     <h2>${escHtml(item.title)}</h2>
     <div class="detail-meta">
       <span class="tag-source">${escHtml(item.source)}</span>
       ${item.published ? `<span style="font-size:.78rem;color:var(--text-muted)">${formatDate(item.published)}</span>` : ''}
-      <div class="relevance-dots" aria-label="Relevância ${item.relevancia || 0} de 5">
-        ${dots(item.relevancia || 0)}
+      <div class="relevance-dots" aria-label="Relevance ${relevance} of 5">
+        ${dots(relevance)}
       </div>
     </div>
   `;
 
-  if (item.resumo_materia) {
+  if (articleSummary) {
     html += `
       <div class="detail-section">
-        <h3>📝 Resumo da Matéria</h3>
-        <p>${escHtml(item.resumo_materia)}</p>
+        <h3>📝 Story Overview</h3>
+        <p>${escHtml(articleSummary)}</p>
       </div>
     `;
-  } else if (item.resumo_curto) {
+  } else if (shortSummary) {
     html += `
       <div class="detail-section">
-        <h3>📝 Resumo</h3>
-        <p>${escHtml(item.resumo_curto)}</p>
+        <h3>📝 Summary</h3>
+        <p>${escHtml(shortSummary)}</p>
       </div>
     `;
   }
 
-  if (item.resumo_comentarios) {
+  if (commentsSummary) {
     html += `
       <div class="detail-section">
-        <h3>💬 O que a galera está falando</h3>
-        <p>${escHtml(item.resumo_comentarios)}</p>
-        <p class="comments-notice">⚠️ Estes são pontos de vista de usuários, não fatos verificados.</p>
+        <h3>💬 Community Discussion</h3>
+        <p>${escHtml(commentsSummary)}</p>
+        <p class="comments-notice">⚠️ Synthesized from user comments, not verified journalistic facts.</p>
       </div>
     `;
   }
 
   html += `<a class="btn-open" href="${escHtml(item.url)}" target="_blank" rel="noopener noreferrer">
-    🔗 Abrir artigo original
+    🔗 Open Original Article
   </a>`;
 
   els.detailContent.innerHTML = html;
@@ -252,16 +273,15 @@ function renderDetail(id) {
   window.scrollTo(0, 0);
 }
 
-// ── Arquivo ─────────────────────────────────────────────────────
+// ── Archive View Rendering ──────────────────────────────────────
 
 async function renderArchive() {
   showOnly(els.archive);
-  els.archiveList.innerHTML = '<p style="color:var(--text-muted);padding:16px">Carregando…</p>';
+  els.archiveList.innerHTML = '<p style="color:var(--text-muted);padding:16px">Loading past editions…</p>';
 
-  // Tenta listar arquivos via archive/index.json (gerado pelo pipeline)
   try {
     const index = await loadJSON('archive/index.json');
-    if (!index.dates?.length) throw new Error('vazio');
+    if (!index.dates?.length) throw new Error('empty');
 
     els.archiveList.innerHTML = '';
     [...index.dates].reverse().forEach(({ date, total_items }) => {
@@ -269,17 +289,17 @@ async function renderArchive() {
       div.className = 'archive-item';
       div.innerHTML = `
         <span class="archive-date">${date}</span>
-        <span class="archive-count">${total_items} notícias</span>
+        <span class="archive-count">${total_items} stories</span>
       `;
       div.addEventListener('click', () => loadData(`archive/${date}.json`));
       els.archiveList.appendChild(div);
     });
   } catch {
-    els.archiveList.innerHTML = '<p style="color:var(--text-muted);padding:16px">Arquivo não disponível ainda.</p>';
+    els.archiveList.innerHTML = '<p style="color:var(--text-muted);padding:16px">No past editions available yet.</p>';
   }
 }
 
-// ── Roteamento por hash ─────────────────────────────────────────
+// ── Hash Routing ────────────────────────────────────────────────
 
 function route() {
   const hash = location.hash.replace(/^#\/?/, '');
@@ -303,7 +323,7 @@ function route() {
   }
 }
 
-// ── PWA / Instalação ────────────────────────────────────────────
+// ── PWA Install Handler ─────────────────────────────────────────
 
 let _deferredInstall = null;
 
@@ -321,17 +341,17 @@ els.btnInstall.addEventListener('click', async () => {
   _deferredInstall = null;
 });
 
-// Service Worker
+// Service Worker Registration
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(console.error);
 }
 
-// ── Event listeners ─────────────────────────────────────────────
+// ── Event Listeners ─────────────────────────────────────────────
 
 window.addEventListener('hashchange', route);
 els.btnArchive.addEventListener('click', () => { location.hash = 'archive'; });
 
-// ── Expõe para uso inline no HTML ──────────────────────────────
+// ── Inline HTML Exposure ────────────────────────────────────────
 window.App = {
   loadData,
   goHome() { location.hash = ''; },

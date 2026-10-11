@@ -1,15 +1,15 @@
 """
-llm.py – Camada de abstração para chamadas a LLMs com fallback automático.
+llm.py – Abstraction layer for LLM requests with automated provider fallback.
 
-Provedores suportados (em ordem de preferência):
+Supported providers (in precedence order):
   1. Google Gemini (gemini-2.0-flash)
   2. Groq (llama-3.3-70b-versatile)
 
-Comportamento:
-  - Retry com backoff exponencial (max_retries_per_provider tentativas).
-  - Circuit breaker: provedor marcado como esgotado após falhas consecutivas.
-  - Se todos falharem: retorna None (pipeline lida com o fallback).
-  - Loga qual provedor atendeu cada chamada.
+Behavior:
+  - Retry with exponential backoff (max_retries_per_provider attempts).
+  - Circuit breaker: provider marked exhausted after repeated consecutive errors.
+  - If all fail: returns None (pipeline triggers graceful fallback).
+  - Logs provider handling each request and prints summary metrics.
 """
 from __future__ import annotations
 
@@ -24,7 +24,7 @@ from typing import Any
 logger = logging.getLogger(__name__)
 
 
-# ── Estatísticas ──────────────────────────────────────────────────────────
+# ── Statistics ────────────────────────────────────────────────────────────
 
 @dataclass
 class LLMStats:
@@ -41,13 +41,13 @@ class LLMStats:
         self.failures += 1
 
     def summary(self) -> str:
-        parts = [f"Total: {self.total_calls}", f"Falhas: {self.failures}"]
+        parts = [f"Total: {self.total_calls}", f"Failures: {self.failures}"]
         for p, n in self.calls_by_provider.items():
             parts.append(f"{p}: {n}")
         return " | ".join(parts)
 
 
-# ── Provedores ────────────────────────────────────────────────────────────
+# ── Providers ─────────────────────────────────────────────────────────────
 
 class GeminiProvider:
     name = "gemini"
@@ -106,8 +106,8 @@ class GroqProvider:
 
 class LLMRouter:
     """
-    Interface única para geração de texto com fallback entre provedores.
-    Uso: router.generate(prompt) -> str | None
+    Unified interface for text generation with multi-provider fallback.
+    Usage: router.generate(prompt) -> str | None
     """
 
     def __init__(self, cfg: dict) -> None:
@@ -123,7 +123,7 @@ class LLMRouter:
             model = p_cfg["model"]
             key = os.environ.get(p_cfg["env_key"], "")
             if not key:
-                logger.warning("Chave %s não encontrada; provedor '%s' desabilitado.", p_cfg["env_key"], name)
+                logger.warning("Secret %s not found; provider '%s' disabled.", p_cfg["env_key"], name)
                 continue
             if name == "gemini":
                 providers.append(GeminiProvider(model, key))
@@ -132,7 +132,7 @@ class LLMRouter:
         return providers
 
     def generate(self, prompt: str) -> str | None:
-        """Chama LLM com fallback. Retorna texto ou None se tudo falhar."""
+        """Invokes LLM with automated fallback. Returns text or None if all fail."""
         rate_pause = self.cfg["rate_limit_pause_seconds"]
         max_retries = self.cfg["max_retries_per_provider"]
         backoff_base = self.cfg["backoff_base_seconds"]
@@ -146,33 +146,33 @@ class LLMRouter:
                     time.sleep(rate_pause)
                     result = provider.generate(prompt)
                     self.stats.record(provider.name)
-                    logger.debug("✓ [%s] atendeu (tentativa %d)", provider.name, attempt + 1)
+                    logger.debug("✓ [%s] resolved request (attempt %d)", provider.name, attempt + 1)
                     return result
                 except Exception as exc:
                     wait = backoff_base ** (attempt + 1)
                     if provider.is_retryable_error(exc):
                         logger.warning(
-                            "⚠ [%s] erro retryable: %s – aguardando %.0fs",
+                            "⚠ [%s] retryable error: %s – waiting %.0fs",
                             provider.name, exc, wait,
                         )
                         time.sleep(wait)
                     else:
-                        logger.warning("✗ [%s] erro não retryable: %s", provider.name, exc)
+                        logger.warning("✗ [%s] fatal/non-retryable error: %s", provider.name, exc)
                         self._exhausted.add(provider.name)
                         break
 
-            # Todas as tentativas falharam → circuit breaker
-            logger.warning("⛔ [%s] esgotado para esta execução.", provider.name)
+            # Mark provider as exhausted for the remainder of this run
+            logger.warning("⛔ [%s] exhausted for this execution session.", provider.name)
             self._exhausted.add(provider.name)
 
         self.stats.record_failure()
-        logger.error("Todos os provedores falharam para este item.")
+        logger.error("All LLM providers failed for this request.")
         return None
 
     def generate_json(self, prompt: str) -> dict | None:
         """
-        Gera JSON válido. Retenta até json_fix_retries vezes se vier inválido.
-        Retorna dict ou None.
+        Generates valid JSON. Retries up to json_fix_retries times on parse error.
+        Returns dict or None.
         """
         max_fix = self.cfg["json_fix_retries"]
         for attempt in range(max_fix + 1):
@@ -183,26 +183,24 @@ class LLMRouter:
             if parsed is not None:
                 return parsed
             self.stats.json_retries += 1
-            logger.warning("JSON inválido (tentativa %d/%d): %s…", attempt + 1, max_fix + 1, raw[:120])
+            logger.warning("Invalid JSON response (attempt %d/%d): %s…", attempt + 1, max_fix + 1, raw[:120])
         return None
 
     def print_summary(self) -> None:
-        logger.info("=== Resumo LLM: %s ===", self.stats.summary())
+        logger.info("=== LLM Summary: %s ===", self.stats.summary())
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────
 
 def _try_parse_json(text: str) -> dict | None:
-    """Tenta extrair JSON de uma string, mesmo com lixo ao redor."""
+    """Attempts extracting and parsing JSON from LLM response text."""
     text = text.strip()
-    # Remove blocos markdown ```json ... ```
     text = re.sub(r"^```(?:json)?\s*", "", text, flags=re.MULTILINE)
     text = re.sub(r"\s*```$", "", text, flags=re.MULTILINE)
     text = text.strip()
     try:
         return json.loads(text)
     except json.JSONDecodeError:
-        # Tenta encontrar o primeiro objeto JSON na string
         match = re.search(r"\{.*\}", text, re.DOTALL)
         if match:
             try:
