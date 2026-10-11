@@ -8,7 +8,7 @@ updated_at: 2026-10-11
 
 ## Web App Manifest (`manifest.json`)
 
-Provides standalone mobile installation properties, theme colors, and icons (`192x192` and `512x512`). Source artwork: `docs/icons/icon.svg` (DB serif monogram, content kept inside the maskable safe zone); PNGs are rendered from it with headless Chrome.
+Provides standalone mobile installation properties, theme colors, and icons (`192x192` and `512x512`). Browser tab favicon: `docs/icons/favicon.svg` (tighter crop, rounded) + `favicon-32.png` fallback. Source artwork: `docs/icons/icon.svg` (DB serif monogram, content kept inside the maskable safe zone); PNGs are rendered from it with headless Chrome.
 
 ## Service Worker (`sw.js`)
 
