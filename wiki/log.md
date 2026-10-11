@@ -39,3 +39,4 @@ Translated all documentation, wiki pages, code docstrings/comments, pipeline pro
 ## [2026-10-11] feat | new "DB" serif monogram app icon; source docs/icons/icon.svg (PNGs rendered with headless Chrome); removed src/generate_icons.py; SW cache v4
 ## [2026-10-11] feat | Destaques: one highlight card per theme instead of global top-5
 ## [2026-10-11] feat | new game_dev theme (industry: layoffs, growth, studios, engines) with Game Developer, GamesIndustry.biz, 80.lv, PocketGamer.biz, Game World Observer, Unity/Unreal/Godot feeds and r/gamedev; AI feeds (Simon Willison, The Decoder, Latent Space, Hugging Face, OpenAI, Google AI, Import AI, r/LocalLLaMA, r/MachineLearning); Guardian, Al Jazeera, Lobsters; CNBC → Folha Mercado; dropped r/programming, r/brdev; SW cache v6
+## [2026-10-11] perf | flash-lite first (Flash: 30s-3min per batch, quota gone after 5 calls), LLM HTTP timeout 120→60s, parallel text extraction (8 workers)

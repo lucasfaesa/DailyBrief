@@ -102,11 +102,11 @@ llm:
 
   providers:
     - name: "gemini"
-      model: "gemini-flash-latest"   # alias tracks the current Flash; 2.0 was retired
+      model: "gemini-flash-lite-latest"   # first: ~5s per batch; Flash took 30s-3min and its free quota ran out after 5 calls
       env_key: "GEMINI_API_KEY"
 
     - name: "gemini"
-      model: "gemini-flash-lite-latest"   # separate capacity pool when Flash returns 503 "high demand"
+      model: "gemini-flash-latest"   # alias tracks the current Flash; separate capacity pool
       env_key: "GEMINI_API_KEY"
 
     - name: "groq"

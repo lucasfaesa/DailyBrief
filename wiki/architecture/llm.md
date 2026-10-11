@@ -25,7 +25,7 @@ Unified interface providing automated fallback between providers, circuit breake
    - **Retryable error (HTTP 429/5xx, timeout, connection, malformed response)**: Waits `min(backoff_base ** attempt, 60)` seconds before the next attempt (no wait after the last).
    - **Fatal error (e.g. 404 model not found, invalid key)**: Marks provider as `_exhausted` and skips to next provider.
 4. If retries run out: a final 429 (quota gone) marks the provider `_exhausted`; a 5xx ("high demand") only skips it for this request.
-5. Gemini providers are named `gemini/<model>`, so `gemini-flash-latest` and `gemini-flash-lite-latest` (separate capacity pools) can be chained before Groq.
+5. Gemini providers are named `gemini/<model>`, so `gemini-flash-lite-latest` (first: fast, enough for classification) and `gemini-flash-latest` (slow under load, tiny free quota) can be chained before Groq. HTTP timeout is 60s.
 6. If all providers fail, returns `None` to let the pipeline handle fallback.
 
 ## Robust JSON Extraction (`generate_json`)

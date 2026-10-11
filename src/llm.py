@@ -58,7 +58,7 @@ class ProviderError(Exception):
 
 
 def _post(url: str, headers: dict, payload: dict) -> dict:
-    resp = requests.post(url, headers=headers, json=payload, timeout=120)
+    resp = requests.post(url, headers=headers, json=payload, timeout=60)
     if resp.status_code != 200:
         raise ProviderError(resp.status_code, resp.text)
     return resp.json()

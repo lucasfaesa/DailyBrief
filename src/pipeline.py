@@ -6,6 +6,7 @@ Prompts in English; summaries in Brazilian Portuguese; output strictly in valid 
 from __future__ import annotations
 
 import logging
+from concurrent.futures import ThreadPoolExecutor
 from extract import extract_text
 from llm import LLMRouter
 
@@ -128,10 +129,10 @@ def process_items(items: list[dict], cfg: dict, router: LLMRouter) -> list[dict]
     batch_size: int = col["batch_size"]
     text_chars: int = col["batch_text_chars"]
 
-    texts = []
-    for idx, item in enumerate(items):
-        logger.info("[%d/%d] Extracting: %s", idx + 1, len(items), item["title"][:80])
-        texts.append(extract_text(item, cfg))
+    # Network-bound: fetching sites one by one took ~2.5 min per run
+    logger.info("Extracting text for %d items", len(items))
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        texts = list(pool.map(lambda item: extract_text(item, cfg), items))
 
     for start in range(0, len(items), batch_size):
         batch = list(zip(items[start:start + batch_size], texts[start:start + batch_size]))

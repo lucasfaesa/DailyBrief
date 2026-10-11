@@ -20,7 +20,7 @@ Enriches items in-place and returns the list.
 
 ## Processing Steps
 
-1. Extracts body text for every item using `extract_text()`.
+1. Extracts body text for every item using `extract_text()`, 8 sites in parallel (`ThreadPoolExecutor`).
 2. Sends items in batches of `batch_size` (default 10, `batch_text_chars` of text each) to `BATCH_PROMPT`:
    - Returns JSON: `{"items": [{"id", "theme", "relevance", "short_summary", "summary"}]}`; results are matched back by `id`.
    - `THEME_GUIDE` defines each theme strictly (e.g. `national_politics` = Brazilian politics only; celebrities/sports/weather go to `others`).
