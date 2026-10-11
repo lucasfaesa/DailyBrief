@@ -33,3 +33,28 @@ assert a["theme"] == "national_politics" and a["article_summary"] == "long" and 
 assert b["theme"] == "anime" and b["relevance"] == 2 and "article_summary" not in b
 assert _try_parse_json('```json\n{"items": []}\n```') == {"items": []}
 print("ok")
+
+# Router: a 503 must not disable the provider for later requests; a fatal error must.
+import llm
+llm.time.sleep = lambda s: None
+
+
+class Flaky:
+    def __init__(self, name, errors):
+        self.name, self.errors = name, errors
+
+    def generate(self, prompt):
+        if self.errors:
+            raise self.errors.pop(0)
+        return '{"ok": 1}'
+
+
+r = llm.LLMRouter.__new__(llm.LLMRouter)
+r.cfg = {"rate_limit_pause_seconds": 0, "max_retries_per_provider": 2, "backoff_base_seconds": 2, "json_fix_retries": 0}
+r.stats, r._exhausted = llm.LLMStats(), set()
+busy = llm.ProviderError(503, "high demand")
+r._providers = [Flaky("a", [busy, busy]), Flaky("b", [llm.ProviderError(404, "gone")])]
+assert r.generate_json("x") is None  # a: 503 twice, b: fatal
+assert r._exhausted == {"b"}
+assert r.generate_json("x") == {"ok": 1}  # a recovered
+print("router ok")

@@ -65,9 +65,8 @@ def _post(url: str, headers: dict, payload: dict) -> dict:
 
 
 class GeminiProvider:
-    name = "gemini"
-
     def __init__(self, model: str, api_key: str) -> None:
+        self.name = f"gemini/{model}"  # several Gemini models can be chained; each has its own capacity pool
         self.model = model
         self.api_key = api_key
 
@@ -149,7 +148,12 @@ class LLMRouter:
             if provider.name in self._exhausted:
                 continue
 
+            last_exc: Exception | None = None
             for attempt in range(max_retries):
+                if attempt:
+                    wait = min(backoff_base ** attempt, 60)
+                    logger.warning("⚠ [%s] retryable error: %s – waiting %.0fs", provider.name, last_exc, wait)
+                    time.sleep(wait)
                 try:
                     time.sleep(rate_pause)
                     result = provider.generate(prompt)
@@ -157,21 +161,19 @@ class LLMRouter:
                     logger.debug("✓ [%s] resolved request (attempt %d)", provider.name, attempt + 1)
                     return result
                 except Exception as exc:
-                    wait = backoff_base ** (attempt + 1)
-                    if _is_retryable(exc):
-                        logger.warning(
-                            "⚠ [%s] retryable error: %s – waiting %.0fs",
-                            provider.name, exc, wait,
-                        )
-                        time.sleep(wait)
-                    else:
+                    last_exc = exc
+                    if not _is_retryable(exc):
                         logger.warning("✗ [%s] fatal/non-retryable error: %s", provider.name, exc)
                         self._exhausted.add(provider.name)
                         break
-
-            # Mark provider as exhausted for the remainder of this run
-            logger.warning("⛔ [%s] exhausted for this execution session.", provider.name)
-            self._exhausted.add(provider.name)
+            else:
+                # 503 "high demand" is transient: skip this provider for this request only.
+                # A persistent 429 means quota is gone: stop wasting backoff on it for the rest of the run.
+                if isinstance(last_exc, ProviderError) and last_exc.status == 429:
+                    logger.warning("⛔ [%s] quota exhausted for this execution session.", provider.name)
+                    self._exhausted.add(provider.name)
+                else:
+                    logger.warning("↷ [%s] gave up on this request: %s", provider.name, last_exc)
 
         self.stats.record_failure()
         logger.error("All LLM providers failed for this request.")

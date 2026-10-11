@@ -6,7 +6,7 @@
      - External asset links: Handled natively
    ================================================================ */
 
-const CACHE_VERSION = 'dailybrief-v2';
+const CACHE_VERSION = 'dailybrief-v4';
 const SHELL_ASSETS = [
   './',
   './index.html',

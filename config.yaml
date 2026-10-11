@@ -75,7 +75,7 @@ extraction:
 # ── LLM Layer ────────────────────────────────────────────────
 llm:
   rate_limit_pause_seconds: 6     # Delay between LLM invocations (Gemini free tier ≈ 10 RPM)
-  max_retries_per_provider: 4     # Attempts before switching providers
+  max_retries_per_provider: 3     # Attempts before switching providers
   json_fix_retries: 2             # Attempts to repair invalid JSON
   backoff_base_seconds: 4         # Exponential backoff base in seconds
 
@@ -84,8 +84,12 @@ llm:
       model: "gemini-flash-latest"   # alias tracks the current Flash; 2.0 was retired
       env_key: "GEMINI_API_KEY"
 
+    - name: "gemini"
+      model: "gemini-flash-lite-latest"   # separate capacity pool when Flash returns 503 "high demand"
+      env_key: "GEMINI_API_KEY"
+
     - name: "groq"
-      model: "llama-3.3-70b-versatile"
+      model: "openai/gpt-oss-120b"   # llama-3.3-70b-versatile was removed
       env_key: "GROQ_API_KEY"
 
 # ── Allowed Themes ───────────────────────────────────────────

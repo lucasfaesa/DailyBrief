@@ -34,3 +34,6 @@ Translated all documentation, wiki pages, code docstrings/comments, pipeline pro
 ## [2026-10-11] fix | LLM providers switched to plain REST (gemini-flash-latest, Groq OpenAI endpoint); retired gemini-2.0-flash and groq-SDK/httpx crash made every item fall back
 ## [2026-10-11] feat | batched classify+summarize in pt-BR, strict theme guide, min_relevance filter, politics-only BR feeds, anime/gaming/economy feeds, per-subreddit hints
 ## [2026-10-11] feat | frontend redesign: tabs inside sticky header, Destaques view, per-theme colors, pt-BR UI, AI summary in detail view; SW cache v2
+## [2026-10-11] fix | 503 no longer disables a provider for the whole run; backoff capped at 60s; added gemini-flash-lite fallback; Groq model → openai/gpt-oss-120b (llama-3.3-70b removed); dedupe by title too
+## [2026-10-11] fix | theme tabs wrap instead of horizontal scroll (Animes/Geral were hidden on desktop); SW cache v3
+## [2026-10-11] feat | new "DB" serif monogram app icon; source docs/icons/icon.svg (PNGs rendered with headless Chrome); removed src/generate_icons.py; SW cache v4

@@ -140,7 +140,6 @@ function selectTheme(theme) {
     const on = btn.dataset.theme === theme;
     btn.classList.toggle('active', on);
     btn.setAttribute('aria-selected', on);
-    if (on) btn.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
   });
   _homeScroll = 0;
   if (location.hash.replace(/^#\/?/, '')) location.hash = '';

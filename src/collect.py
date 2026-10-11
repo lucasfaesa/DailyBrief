@@ -245,13 +245,14 @@ def collect_rss(cfg: dict) -> list[dict]:
 # ── Deduplication ──────────────────────────────────────────────────────────
 
 def deduplicate(items: list[dict]) -> list[dict]:
-    """Removes duplicate URLs, retaining first discovered item."""
+    """Removes duplicate URLs and titles (same story re-listed under another URL), retaining first discovered item."""
     seen: set[str] = set()
     result: list[dict] = []
     for item in items:
         url = item["url"].split("?")[0].rstrip("/")
-        if url not in seen:
-            seen.add(url)
+        title = item["title"].casefold()
+        if url not in seen and title not in seen:
+            seen.update((url, title))
             result.append(item)
     logger.info("Deduplication result: %d unique items", len(result))
     return result
