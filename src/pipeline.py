@@ -17,6 +17,7 @@ ALLOWED_THEMES = [
     "technology",
     "ai",
     "gaming",
+    "game_dev",
     "anime",
     "science",
     "economy",
@@ -41,7 +42,8 @@ THEME_GUIDE = """- national_politics: ONLY Brazilian politics — federal/state 
 - international_politics: geopolitics, wars, diplomacy, foreign governments and elections.
 - technology: software, hardware, internet, gadgets, programming, tech companies.
 - ai: artificial intelligence, machine learning, LLMs.
-- gaming: video games, consoles, game industry.
+- gaming: video games from the player's side — releases, reviews, trailers, updates, consoles.
+- game_dev: game development and the game industry as a business — studio layoffs, closures, hiring, growth, funding, acquisitions, revenue, engines (Unity, Unreal, Godot), dev tools, postmortems, developer working conditions.
 - anime: anime, manga, Japanese animation and pop culture.
 - science: research, space, health studies, environment science.
 - economy: markets, inflation, interest rates, companies' finances, jobs, trade.

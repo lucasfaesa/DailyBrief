@@ -28,9 +28,10 @@ reddit:
     - { name: worldnews,   category_hint: international_politics }
     - { name: brasil,      category_hint: others }
     - { name: technology,  category_hint: technology }
-    - { name: programming, category_hint: technology }
-    - { name: brdev,       category_hint: technology }
     - { name: artificial,  category_hint: ai }
+    - { name: LocalLLaMA,  category_hint: ai }
+    - { name: MachineLearning, category_hint: ai }
+    - { name: gamedev,     category_hint: game_dev }
     - { name: gaming,      category_hint: gaming }
     - { name: anime,       category_hint: anime }
     - { name: science,     category_hint: science }
@@ -46,16 +47,36 @@ rss_feeds:
   - { name: "BBC Brasil",           url: "https://www.bbc.com/portuguese/index.xml",                category_hint: international_politics }
   - { name: "G1 Mundo",             url: "https://g1.globo.com/rss/g1/mundo/",                      category_hint: international_politics }
   - { name: "BBC World",            url: "https://feeds.bbci.co.uk/news/world/rss.xml",             category_hint: international_politics }
+  - { name: "The Guardian World",   url: "https://www.theguardian.com/world/rss",                   category_hint: international_politics }
+  - { name: "Al Jazeera",           url: "https://www.aljazeera.com/xml/rss/all.xml",               category_hint: international_politics }
   # Technology / AI
   - { name: "Tecnoblog",            url: "https://tecnoblog.net/feed/",                             category_hint: technology }
   - { name: "The Verge",            url: "https://www.theverge.com/rss/index.xml",                  category_hint: technology }
   - { name: "Ars Technica",         url: "https://feeds.arstechnica.com/arstechnica/index",         category_hint: technology }
   - { name: "TechCrunch",           url: "https://techcrunch.com/feed/",                            category_hint: technology }
+  - { name: "Lobsters",             url: "https://lobste.rs/rss",                                   category_hint: technology }
+  # AI
   - { name: "MIT Technology Review", url: "https://www.technologyreview.com/feed/",                  category_hint: ai }
+  - { name: "Simon Willison",       url: "https://simonwillison.net/atom/everything/",              category_hint: ai }
+  - { name: "The Decoder",          url: "https://the-decoder.com/feed/",                           category_hint: ai }
+  - { name: "Latent Space",         url: "https://www.latent.space/feed",                           category_hint: ai }
+  - { name: "Hugging Face Blog",    url: "https://huggingface.co/blog/feed.xml",                    category_hint: ai }
+  - { name: "OpenAI News",          url: "https://openai.com/news/rss.xml",                         category_hint: ai }
+  - { name: "Google AI Blog",       url: "https://blog.google/technology/ai/rss/",                  category_hint: ai }
+  - { name: "Import AI",            url: "https://importai.substack.com/feed",                      category_hint: ai }
   # Gaming
   - { name: "IGN",                  url: "https://feeds.feedburner.com/ign/all",                    category_hint: gaming }
   - { name: "PC Gamer",             url: "https://www.pcgamer.com/rss/",                            category_hint: gaming }
   - { name: "Eurogamer",            url: "https://www.eurogamer.net/feed",                          category_hint: gaming }
+  # Game development & industry
+  - { name: "Game Developer",       url: "https://www.gamedeveloper.com/rss.xml",                   category_hint: game_dev }
+  - { name: "GamesIndustry.biz",    url: "https://www.gamesindustry.biz/rss/gamesindustry_news_feed.rss", category_hint: game_dev }
+  - { name: "80.lv",                url: "https://80.lv/feed/",                                     category_hint: game_dev }
+  - { name: "PocketGamer.biz",      url: "https://www.pocketgamer.biz/rss/",                        category_hint: game_dev }
+  - { name: "Game World Observer",  url: "https://www.gameworldobserver.com/feed",                  category_hint: game_dev }
+  - { name: "Unity Blog",           url: "https://unity.com/blog/rss",                              category_hint: game_dev }
+  - { name: "Unreal Engine News",   url: "https://www.unrealengine.com/en-US/rss",                  category_hint: game_dev }
+  - { name: "Godot News",           url: "https://godotengine.org/rss.xml",                         category_hint: game_dev }
   # Anime
   - { name: "Anime News Network",   url: "https://www.animenewsnetwork.com/all/rss.xml",            category_hint: anime }
   - { name: "Crunchyroll News",     url: "https://cr-news-api-service.prd.crunchyrollsvc.com/v1/en-US/rss", category_hint: anime }
@@ -65,7 +86,7 @@ rss_feeds:
   # Economy
   - { name: "G1 Economia",          url: "https://g1.globo.com/rss/g1/economia/",                   category_hint: economy }
   - { name: "InfoMoney",            url: "https://www.infomoney.com.br/feed/",                      category_hint: economy }
-  - { name: "CNBC Top News",        url: "https://www.cnbc.com/id/100003114/device/rss/rss.html",   category_hint: economy }
+  - { name: "Folha Mercado",        url: "https://feeds.folha.uol.com.br/mercado/rss091.xml",       category_hint: economy }
 
 # ── Text Extraction ──────────────────────────────────────────
 extraction:
@@ -99,6 +120,7 @@ themes:
   - technology
   - ai
   - gaming
+  - game_dev
   - anime
   - science
   - economy

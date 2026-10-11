@@ -15,6 +15,7 @@ const THEMES = {
   ai:                     { label: 'IA',                color: '#d864d8' },
   science:                { label: 'Ciência',           color: '#12a594' },
   gaming:                 { label: 'Games',             color: '#f76b15' },
+  game_dev:               { label: 'Game Dev',          color: '#ffb224' },
   anime:                  { label: 'Animes',            color: '#ff5d8f' },
   others:                 { label: 'Geral',             color: '#8b8d98' },
 };

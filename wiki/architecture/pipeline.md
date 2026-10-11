@@ -41,6 +41,8 @@ Self-check: `python src/test_pipeline.py`.
 
 ## Supported Themes (`ALLOWED_THEMES`)
 
-`national_politics`, `international_politics`, `technology`, `ai`, `gaming`, `anime`, `science`, `economy`, `others`
+`national_politics`, `international_politics`, `technology`, `ai`, `gaming`, `game_dev`, `anime`, `science`, `economy`, `others`
+
+`gaming` is the player's side (releases, reviews); `game_dev` is development and the industry as a business (layoffs, closures, funding, engines).
 
 See related docs: [[architecture/llm]] and [[architecture/extract]].
