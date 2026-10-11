@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#0f172a" />
-  <meta name="description" content="AI-curated daily news digest" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#111214" />
+  <meta name="description" content="Resumo diário de notícias gerado por IA" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="DailyBrief" />
@@ -14,65 +14,46 @@
   <link rel="manifest" href="manifest.json" />
   <link rel="stylesheet" href="style.css" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
-
-  <!-- Critical resource preload -->
   <link rel="preload" href="data.json" as="fetch" crossorigin />
 </head>
 <body>
 
-  <!-- ── Header ─────────────────────────────────────── -->
   <header id="app-header">
     <div class="header-inner">
-      <div class="header-title">
-        <span class="logo">📰</span>
-        <h1>DailyBrief</h1>
-      </div>
+      <a href="#" class="brand" onclick="App.selectTheme('all')">
+        <span class="brand-name">Daily<em>Brief</em></span>
+        <span id="generated-at" class="generated-at"></span>
+      </a>
       <div class="header-actions">
-        <button id="btn-archive" class="btn-icon" title="Past Editions" aria-label="Past Editions">
-          🗂️
-        </button>
-        <button id="btn-install" class="btn-icon hidden" title="Install App" aria-label="Install App">
-          ⬇️
-        </button>
+        <button id="btn-install" class="btn-icon hidden" title="Instalar app" aria-label="Instalar app">⤓</button>
+        <button id="btn-archive" class="btn-icon" title="Edições anteriores" aria-label="Edições anteriores">Arquivo</button>
       </div>
     </div>
-    <p id="generated-at" class="generated-at"></p>
+    <nav id="theme-tabs" class="theme-tabs" role="tablist" aria-label="Temas"></nav>
   </header>
 
-  <!-- ── Main Content ───────────────────────────────── -->
   <main id="app-main">
 
-    <!-- Loading Screen -->
     <div id="loading" class="loading-screen" aria-live="polite">
       <div class="spinner"></div>
-      <p>Loading stories…</p>
+      <p>Carregando notícias…</p>
     </div>
 
-    <!-- Error Screen -->
     <div id="error-screen" class="hidden error-screen" role="alert">
-      <span class="error-icon">⚠️</span>
-      <p id="error-msg">Unable to load stories.</p>
-      <button onclick="App.loadData()" class="btn-retry">Try Again</button>
+      <p id="error-msg">Não foi possível carregar as notícias.</p>
+      <button onclick="App.loadData()" class="btn-primary">Tentar de novo</button>
     </div>
 
-    <!-- Home Feed -->
-    <div id="home-view" class="hidden">
-      <!-- Theme Tabs -->
-      <nav id="theme-tabs" class="theme-tabs" role="tablist" aria-label="Topics"></nav>
-      <!-- Collapsible Theme Sections -->
-      <div id="theme-sections"></div>
-    </div>
+    <div id="home-view" class="hidden"></div>
 
-    <!-- Article Detail View -->
-    <div id="detail-view" class="hidden detail-view" role="region" aria-label="Article Details">
-      <button id="btn-back" class="btn-back" onclick="App.goHome()">← Back</button>
+    <div id="detail-view" class="hidden detail-view" role="region" aria-label="Detalhes da notícia">
+      <button class="btn-back" onclick="App.goHome()">← Voltar</button>
       <article id="detail-content"></article>
     </div>
 
-    <!-- Archive View -->
-    <div id="archive-view" class="hidden archive-view" role="region" aria-label="Archive">
-      <button class="btn-back" onclick="App.goHome()">← Back</button>
-      <h2>Past Editions</h2>
+    <div id="archive-view" class="hidden archive-view" role="region" aria-label="Arquivo">
+      <button class="btn-back" onclick="App.goHome()">← Voltar</button>
+      <h2 class="page-title">Edições anteriores</h2>
       <div id="archive-list" class="archive-list"></div>
     </div>
 

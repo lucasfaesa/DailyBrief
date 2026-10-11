@@ -20,8 +20,10 @@ Pure HTML5, CSS3, and modern vanilla JavaScript. No bundling, transpilation, or 
 
 ## Hash Routing (`app.js`)
 
-- `#/`: Home feed with topic filter tabs and collapsible sections.
-- `#/item/<id>`: Detailed view displaying article overview and community reactions.
+- `#/`: Home feed. Theme tabs live inside the sticky header (one sticky block, so they never slide under it). Tab "Destaques" shows the top-5 items by relevance plus the top 4 per theme with a "ver todas" link; a theme tab lists all its items. Every theme always has a tab.
+- Items are grouped client-side from `all_items` (`data.themes` is not read); legacy Portuguese theme keys are mapped via `THEME_COMPAT`.
+- UI language is pt-BR; theme accent colors come from `THEMES` in `app.js` via the `--c` CSS variable.
+- `#/item/<id>`: Detail view with "Resumo por IA" (`article_summary`) and community reactions.
 - `#/archive`: Historical edition selector.
 
 ## Schema of `data.json`

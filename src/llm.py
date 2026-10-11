@@ -2,8 +2,8 @@
 llm.py – Abstraction layer for LLM requests with automated provider fallback.
 
 Supported providers (in precedence order):
-  1. Google Gemini (gemini-2.0-flash)
-  2. Groq (llama-3.3-70b-versatile)
+  1. Google Gemini (REST generateContent)
+  2. Groq (OpenAI-compatible REST)
 
 Behavior:
   - Retry with exponential backoff (max_retries_per_provider attempts).
@@ -18,8 +18,9 @@ import logging
 import os
 import re
 import time
+
+import requests
 from dataclasses import dataclass, field
-from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -48,6 +49,20 @@ class LLMStats:
 
 
 # ── Providers ─────────────────────────────────────────────────────────────
+# ponytail: plain REST via requests; the vendor SDKs broke us twice (retired model, httpx incompatibility).
+
+class ProviderError(Exception):
+    def __init__(self, status: int, body: str) -> None:
+        super().__init__(f"HTTP {status}: {body[:300]}")
+        self.status = status
+
+
+def _post(url: str, headers: dict, payload: dict) -> dict:
+    resp = requests.post(url, headers=headers, json=payload, timeout=120)
+    if resp.status_code != 200:
+        raise ProviderError(resp.status_code, resp.text)
+    return resp.json()
+
 
 class GeminiProvider:
     name = "gemini"
@@ -55,23 +70,17 @@ class GeminiProvider:
     def __init__(self, model: str, api_key: str) -> None:
         self.model = model
         self.api_key = api_key
-        self._client = None
-
-    def _get_client(self):
-        if self._client is None:
-            import google.generativeai as genai
-            genai.configure(api_key=self.api_key)
-            self._client = genai.GenerativeModel(self.model)
-        return self._client
 
     def generate(self, prompt: str) -> str:
-        client = self._get_client()
-        response = client.generate_content(prompt)
-        return response.text
-
-    def is_retryable_error(self, exc: Exception) -> bool:
-        msg = str(exc).lower()
-        return any(k in msg for k in ("429", "quota", "rate", "500", "503", "unavailable"))
+        data = _post(
+            f"https://generativelanguage.googleapis.com/v1beta/models/{self.model}:generateContent",
+            {"x-goog-api-key": self.api_key},
+            {
+                "contents": [{"parts": [{"text": prompt}]}],
+                "generationConfig": {"temperature": 0.2, "responseMimeType": "application/json"},
+            },
+        )
+        return data["candidates"][0]["content"]["parts"][0]["text"]
 
 
 class GroqProvider:
@@ -80,26 +89,25 @@ class GroqProvider:
     def __init__(self, model: str, api_key: str) -> None:
         self.model = model
         self.api_key = api_key
-        self._client = None
-
-    def _get_client(self):
-        if self._client is None:
-            from groq import Groq
-            self._client = Groq(api_key=self.api_key)
-        return self._client
 
     def generate(self, prompt: str) -> str:
-        client = self._get_client()
-        completion = client.chat.completions.create(
-            model=self.model,
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.2,
+        data = _post(
+            "https://api.groq.com/openai/v1/chat/completions",
+            {"Authorization": f"Bearer {self.api_key}"},
+            {
+                "model": self.model,
+                "messages": [{"role": "user", "content": prompt}],
+                "temperature": 0.2,
+                "response_format": {"type": "json_object"},
+            },
         )
-        return completion.choices[0].message.content
+        return data["choices"][0]["message"]["content"]
 
-    def is_retryable_error(self, exc: Exception) -> bool:
-        msg = str(exc).lower()
-        return any(k in msg for k in ("429", "quota", "rate", "500", "503", "unavailable"))
+
+def _is_retryable(exc: Exception) -> bool:
+    if isinstance(exc, ProviderError):
+        return exc.status == 429 or exc.status >= 500
+    return isinstance(exc, (requests.Timeout, requests.ConnectionError, KeyError, IndexError))
 
 
 # ── LLMRouter ─────────────────────────────────────────────────────────────
@@ -150,7 +158,7 @@ class LLMRouter:
                     return result
                 except Exception as exc:
                     wait = backoff_base ** (attempt + 1)
-                    if provider.is_retryable_error(exc):
+                    if _is_retryable(exc):
                         logger.warning(
                             "⚠ [%s] retryable error: %s – waiting %.0fs",
                             provider.name, exc, wait,

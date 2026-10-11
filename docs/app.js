@@ -6,50 +6,50 @@
 
 'use strict';
 
-// ── Theme Mapping (Key → English Label + Icon) ──────────────────
-const THEME_LABELS = {
-  national_politics:      { label: 'National Politics',       icon: '🏛️' },
-  international_politics: { label: 'World News',              icon: '🌍' },
-  technology:             { label: 'Technology',              icon: '💻' },
-  ai:                     { label: 'Artificial Intelligence',  icon: '🤖' },
-  gaming:                 { label: 'Gaming',                  icon: '🎮' },
-  anime:                  { label: 'Anime & Manga',           icon: '🎌' },
-  science:                { label: 'Science',                 icon: '🔬' },
-  economy:                { label: 'Economy & Markets',       icon: '📈' },
-  others:                 { label: 'General News',            icon: '🌐' },
-  // Backwards compatibility keys
-  politica_nacional:      { label: 'National Politics',       icon: '🏛️' },
-  politica_internacional: { label: 'World News',              icon: '🌍' },
-  tecnologia:             { label: 'Technology',              icon: '💻' },
-  games:                  { label: 'Gaming',                  icon: '🎮' },
-  animes:                 { label: 'Anime & Manga',           icon: '🎌' },
-  ciencia:                { label: 'Science',                 icon: '🔬' },
-  economia:               { label: 'Economy & Markets',       icon: '📈' },
-  outros:                 { label: 'General News',            icon: '🌐' },
+// Order here = tab order
+const THEMES = {
+  national_politics:      { label: 'Política Nacional', color: '#e5484d' },
+  international_politics: { label: 'Mundo',             color: '#3e9bff' },
+  economy:                { label: 'Economia',          color: '#30a46c' },
+  technology:             { label: 'Tecnologia',        color: '#8e7bff' },
+  ai:                     { label: 'IA',                color: '#d864d8' },
+  science:                { label: 'Ciência',           color: '#12a594' },
+  gaming:                 { label: 'Games',             color: '#f76b15' },
+  anime:                  { label: 'Animes',            color: '#ff5d8f' },
+  others:                 { label: 'Geral',             color: '#8b8d98' },
 };
 
-// ── Global State ────────────────────────────────────────────────
-let _data = null;
-let _allItems = {};
-let _activeTheme = null;
+// Archives generated before the English refactor use Portuguese keys
+const THEME_COMPAT = {
+  politica_nacional: 'national_politics', politica_internacional: 'international_politics',
+  tecnologia: 'technology', ia: 'ai', games: 'gaming', animes: 'anime',
+  ciencia: 'science', economia: 'economy', outros: 'others',
+};
 
-// ── DOM Elements ────────────────────────────────────────────────
+const HOME_PER_THEME = 4;
+const HIGHLIGHTS = 5;
+
+let _data = null;
+let _byId = {};
+let _byTheme = {};
+let _activeTheme = 'all';
+let _homeScroll = 0;
+
 const $ = id => document.getElementById(id);
 
 const els = {
-  loading:        $('loading'),
-  error:          $('error-screen'),
-  errorMsg:       $('error-msg'),
-  home:           $('home-view'),
-  detail:         $('detail-view'),
-  detailContent:  $('detail-content'),
-  archive:        $('archive-view'),
-  archiveList:    $('archive-list'),
-  tabs:           $('theme-tabs'),
-  sections:       $('theme-sections'),
-  generatedAt:    $('generated-at'),
-  btnArchive:     $('btn-archive'),
-  btnInstall:     $('btn-install'),
+  loading:       $('loading'),
+  error:         $('error-screen'),
+  errorMsg:      $('error-msg'),
+  home:          $('home-view'),
+  detail:        $('detail-view'),
+  detailContent: $('detail-content'),
+  archive:       $('archive-view'),
+  archiveList:   $('archive-list'),
+  tabs:          $('theme-tabs'),
+  generatedAt:   $('generated-at'),
+  btnArchive:    $('btn-archive'),
+  btnInstall:    $('btn-install'),
 };
 
 // ── Utilities ───────────────────────────────────────────────────
@@ -61,13 +61,17 @@ function showOnly(...toShow) {
   toShow.forEach(show);
 }
 
-function formatDate(iso) {
+function formatDate(iso, opts = { dateStyle: 'long', timeStyle: 'short' }) {
   if (!iso) return '';
   try {
-    return new Intl.DateTimeFormat('en-US', {
-      dateStyle: 'full', timeStyle: 'short', timeZone: 'America/Sao_Paulo'
-    }).format(new Date(iso));
+    return new Intl.DateTimeFormat('pt-BR', { ...opts, timeZone: 'America/Sao_Paulo' }).format(new Date(iso));
   } catch { return iso; }
+}
+
+function timeAgo(iso) {
+  const h = Math.round((Date.now() - new Date(iso)) / 36e5);
+  if (!iso || isNaN(h)) return '';
+  return h < 1 ? 'agora' : h < 24 ? `há ${h}h` : `há ${Math.round(h / 24)}d`;
 }
 
 function escHtml(str = '') {
@@ -78,11 +82,14 @@ function escHtml(str = '') {
     .replace(/"/g, '&quot;');
 }
 
-function dots(relevance) {
-  return Array.from({ length: 5 }, (_, i) =>
-    `<span class="dot${i < relevance ? ' filled' : ''}"></span>`
-  ).join('');
-}
+const themeOf = item => {
+  const raw = item.theme || item.tema || 'others';
+  return THEMES[raw] ? raw : (THEME_COMPAT[raw] || 'others');
+};
+const relOf = item => item.relevance || item.relevancia || 0;
+const shortOf = item => item.short_summary || item.resumo_curto;
+const longOf = item => item.article_summary || item.resumo_materia;
+const commentsOf = item => item.comments_summary || item.resumo_comentarios;
 
 // ── Data Fetching ───────────────────────────────────────────────
 
@@ -96,206 +103,165 @@ async function loadData(path = 'data.json') {
   showOnly(els.loading);
   try {
     _data = await loadJSON(path);
-    _allItems = {};
+    _byId = {};
+    _byTheme = Object.fromEntries(Object.keys(THEMES).map(k => [k, []]));
     for (const item of (_data.all_items || [])) {
-      _allItems[item.id] = item;
+      _byId[item.id] = item;
+      _byTheme[themeOf(item)].push(item);
     }
-    renderHome();
+    Object.values(_byTheme).forEach(list => list.sort((a, b) => relOf(b) - relOf(a)));
+    els.generatedAt.textContent = _data.generated_at ? formatDate(_data.generated_at) : '';
+    renderTabs();
+    selectTheme('all');
   } catch (err) {
     console.error(err);
-    els.errorMsg.textContent = 'Unable to load stories. Please check your connection.';
+    els.errorMsg.textContent = 'Não foi possível carregar as notícias. Verifique sua conexão.';
     showOnly(els.error);
   }
 }
 
-// ── Home View Rendering ─────────────────────────────────────────
+// ── Home ────────────────────────────────────────────────────────
+
+function renderTabs() {
+  const tabs = [['all', 'Destaques', _data.all_items?.length || 0],
+    ...Object.entries(THEMES).map(([k, t]) => [k, t.label, _byTheme[k].length])];
+  els.tabs.innerHTML = tabs.map(([key, label, n]) => `
+    <button class="tab-btn" role="tab" data-theme="${key}"
+            style="--c:${THEMES[key]?.color || 'var(--accent)'}">
+      ${label}<span class="tab-count">${n}</span>
+    </button>`).join('');
+  els.tabs.querySelectorAll('.tab-btn').forEach(btn =>
+    btn.addEventListener('click', () => selectTheme(btn.dataset.theme)));
+}
+
+function selectTheme(theme) {
+  _activeTheme = theme;
+  els.tabs.querySelectorAll('.tab-btn').forEach(btn => {
+    const on = btn.dataset.theme === theme;
+    btn.classList.toggle('active', on);
+    btn.setAttribute('aria-selected', on);
+    if (on) btn.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
+  });
+  _homeScroll = 0;
+  if (location.hash.replace(/^#\/?/, '')) location.hash = '';
+  renderHome();
+}
 
 function renderHome() {
-  const themes = _data.themes || {};
-  const orderedKeys = Object.keys(THEME_LABELS).filter(k => themes[k]?.length);
-
-  // Unique normalized keys to prevent duplicate tabs
-  const renderedThemes = new Set();
-
-  if (_data.generated_at) {
-    els.generatedAt.textContent = `Updated on ${formatDate(_data.generated_at)}`;
+  if (_activeTheme === 'all') {
+    const top = [...(_data.all_items || [])].sort((a, b) => relOf(b) - relOf(a)).slice(0, HIGHLIGHTS);
+    const topIds = new Set(top.map(i => i.id));
+    let html = top.length ? `<section class="highlights">${top.map((it, i) => card(it, i === 0 ? 'lead' : 'feature')).join('')}</section>` : '';
+    for (const [key, t] of Object.entries(THEMES)) {
+      const items = _byTheme[key].filter(i => !topIds.has(i.id));
+      if (!items.length) continue;
+      html += `
+        <section class="theme-section" style="--c:${t.color}">
+          <h2 class="section-title"><span>${t.label}</span></h2>
+          <div class="card-list">${items.slice(0, HOME_PER_THEME).map(i => card(i)).join('')}</div>
+          ${items.length > HOME_PER_THEME
+            ? `<button class="btn-more" data-theme="${key}">Ver todas as ${_byTheme[key].length} de ${t.label} →</button>` : ''}
+        </section>`;
+    }
+    els.home.innerHTML = html || empty();
+  } else {
+    const t = THEMES[_activeTheme];
+    const items = _byTheme[_activeTheme];
+    els.home.innerHTML = `
+      <section class="theme-section" style="--c:${t.color}">
+        <h2 class="page-title">${t.label}</h2>
+        ${items.length ? `<div class="card-list">${items.map(i => card(i)).join('')}</div>` : empty()}
+      </section>`;
   }
 
-  // Filter Tabs
-  els.tabs.innerHTML = '';
-  const allTab = document.createElement('button');
-  allTab.className = 'tab-btn active';
-  allTab.textContent = '🗞️ All';
-  allTab.dataset.theme = 'all';
-  allTab.addEventListener('click', () => activateTab('all'));
-  els.tabs.appendChild(allTab);
+  els.home.querySelectorAll('[data-id]').forEach(el =>
+    el.addEventListener('click', () => {
+      _homeScroll = window.scrollY;
+      location.hash = `/item/${el.dataset.id}`;
+    }));
+  els.home.querySelectorAll('.btn-more').forEach(el =>
+    el.addEventListener('click', () => selectTheme(el.dataset.theme)));
 
-  orderedKeys.forEach(key => {
-    if (renderedThemes.has(key)) return;
-    renderedThemes.add(key);
-    const meta = THEME_LABELS[key];
-    const btn = document.createElement('button');
-    btn.className = 'tab-btn';
-    btn.textContent = `${meta.icon} ${meta.label}`;
-    btn.dataset.theme = key;
-    btn.addEventListener('click', () => activateTab(key));
-    els.tabs.appendChild(btn);
-  });
-
-  // Topic Sections
-  els.sections.innerHTML = '';
-  orderedKeys.forEach(key => {
-    const items = themes[key] || [];
-    const meta = THEME_LABELS[key];
-    const section = document.createElement('section');
-    section.className = 'theme-section';
-    section.id = `section-${key}`;
-    section.dataset.theme = key;
-
-    section.innerHTML = `
-      <div class="theme-header" role="button" tabindex="0"
-           aria-expanded="true" aria-controls="items-${key}">
-        <h2>${meta.icon} ${meta.label} <small>(${items.length})</small></h2>
-        <span class="theme-chevron">▼</span>
-      </div>
-      <div class="theme-items" id="items-${key}"></div>
-    `;
-
-    const header = section.querySelector('.theme-header');
-    const toggleCollapse = () => {
-      section.classList.toggle('collapsed');
-      header.setAttribute('aria-expanded', !section.classList.contains('collapsed'));
-    };
-    header.addEventListener('click', toggleCollapse);
-    header.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') toggleCollapse(); });
-
-    const container = section.querySelector('.theme-items');
-    items.forEach(item => container.appendChild(buildCard(item)));
-
-    els.sections.appendChild(section);
-  });
-
-  _activeTheme = 'all';
   showOnly(els.home);
-  window.scrollTo(0, 0);
+  window.scrollTo(0, _homeScroll);
 }
 
-function activateTab(theme) {
-  _activeTheme = theme;
-  document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.theme === theme);
-  });
-  document.querySelectorAll('.theme-section').forEach(sec => {
-    sec.style.display = (theme === 'all' || sec.dataset.theme === theme) ? '' : 'none';
-  });
+function empty() {
+  return '<p class="empty">Nenhuma notícia neste tema hoje.</p>';
 }
 
-function buildCard(item) {
-  const btn = document.createElement('button');
-  btn.className = 'news-card';
-  btn.setAttribute('aria-label', `View story: ${item.title}`);
-  const summary = item.short_summary || item.resumo_curto;
-  const relevance = item.relevance || item.relevancia || 0;
-
-  btn.innerHTML = `
-    <p class="card-title">${escHtml(item.title)}</p>
-    ${summary ? `<p class="card-summary">${escHtml(summary)}</p>` : ''}
-    <div class="card-meta">
-      <span class="tag-source">${escHtml(item.source)}</span>
-      <div class="relevance-dots" aria-label="Relevance ${relevance} of 5">
-        ${dots(relevance)}
-      </div>
-    </div>
-  `;
-  btn.addEventListener('click', () => {
-    location.hash = `/item/${item.id}`;
-  });
-  return btn;
+function card(item, variant = '') {
+  const t = THEMES[themeOf(item)];
+  const summary = variant === 'lead' ? (longOf(item) || shortOf(item)) : shortOf(item);
+  const hasSummary = summary && summary !== item.title;
+  return `
+    <button class="news-card ${variant}" data-id="${escHtml(item.id)}" style="--c:${t.color}">
+      ${variant ? `<span class="kicker">${t.label}</span>` : ''}
+      <span class="card-title">${escHtml(item.title)}</span>
+      ${hasSummary ? `<span class="card-summary">${escHtml(summary)}</span>` : ''}
+      <span class="card-meta">
+        <span>${escHtml(item.source)}</span>
+        ${item.published ? `<span>· ${timeAgo(item.published)}</span>` : ''}
+        ${relOf(item) >= 4 ? '<span class="badge">Importante</span>' : ''}
+      </span>
+    </button>`;
 }
 
-// ── Detail View Rendering ───────────────────────────────────────
+// ── Detail ──────────────────────────────────────────────────────
 
 function renderDetail(id) {
-  const item = _allItems[id];
-  if (!item) {
-    location.hash = '';
-    return;
-  }
+  const item = _byId[id];
+  if (!item) { location.hash = ''; return; }
+  const t = THEMES[themeOf(item)];
+  const summary = longOf(item) || (shortOf(item) !== item.title ? shortOf(item) : '');
+  const comments = commentsOf(item);
 
-  const relevance = item.relevance || item.relevancia || 0;
-  const articleSummary = item.article_summary || item.resumo_materia;
-  const shortSummary = item.short_summary || item.resumo_curto;
-  const commentsSummary = item.comments_summary || item.resumo_comentarios;
+  els.detailContent.style.setProperty('--c', t.color);
+  els.detailContent.innerHTML = `
+    <span class="kicker">${t.label}</span>
+    <h1 class="detail-title">${escHtml(item.title)}</h1>
+    <p class="detail-meta">${escHtml(item.source)}${item.published ? ` · ${formatDate(item.published)}` : ''}</p>
 
-  let html = `
-    <h2>${escHtml(item.title)}</h2>
-    <div class="detail-meta">
-      <span class="tag-source">${escHtml(item.source)}</span>
-      ${item.published ? `<span style="font-size:.78rem;color:var(--text-muted)">${formatDate(item.published)}</span>` : ''}
-      <div class="relevance-dots" aria-label="Relevance ${relevance} of 5">
-        ${dots(relevance)}
-      </div>
-    </div>
+    <section class="detail-section ai">
+      <h3>Resumo por IA</h3>
+      ${summary
+        ? `<p>${escHtml(summary)}</p>`
+        : '<p class="muted">Resumo indisponível para esta matéria (a IA não processou esta edição).</p>'}
+    </section>
+
+    ${comments ? `
+      <section class="detail-section">
+        <h3>O que a comunidade diz</h3>
+        <p>${escHtml(comments)}</p>
+        <p class="muted small">Sintetizado de comentários de usuários — opiniões, não fatos verificados.</p>
+      </section>` : ''}
+
+    <a class="btn-primary" href="${escHtml(item.url)}" target="_blank" rel="noopener noreferrer">Ler matéria original ↗</a>
   `;
-
-  if (articleSummary) {
-    html += `
-      <div class="detail-section">
-        <h3>📝 Story Overview</h3>
-        <p>${escHtml(articleSummary)}</p>
-      </div>
-    `;
-  } else if (shortSummary) {
-    html += `
-      <div class="detail-section">
-        <h3>📝 Summary</h3>
-        <p>${escHtml(shortSummary)}</p>
-      </div>
-    `;
-  }
-
-  if (commentsSummary) {
-    html += `
-      <div class="detail-section">
-        <h3>💬 Community Discussion</h3>
-        <p>${escHtml(commentsSummary)}</p>
-        <p class="comments-notice">⚠️ Synthesized from user comments, not verified journalistic facts.</p>
-      </div>
-    `;
-  }
-
-  html += `<a class="btn-open" href="${escHtml(item.url)}" target="_blank" rel="noopener noreferrer">
-    🔗 Open Original Article
-  </a>`;
-
-  els.detailContent.innerHTML = html;
   showOnly(els.detail);
   window.scrollTo(0, 0);
 }
 
-// ── Archive View Rendering ──────────────────────────────────────
+// ── Archive ─────────────────────────────────────────────────────
 
 async function renderArchive() {
   showOnly(els.archive);
-  els.archiveList.innerHTML = '<p style="color:var(--text-muted);padding:16px">Loading past editions…</p>';
-
+  els.archiveList.innerHTML = '<p class="empty">Carregando…</p>';
   try {
     const index = await loadJSON('archive/index.json');
     if (!index.dates?.length) throw new Error('empty');
-
     els.archiveList.innerHTML = '';
     [...index.dates].reverse().forEach(({ date, total_items }) => {
-      const div = document.createElement('div');
-      div.className = 'archive-item';
-      div.innerHTML = `
-        <span class="archive-date">${date}</span>
-        <span class="archive-count">${total_items} stories</span>
-      `;
-      div.addEventListener('click', () => loadData(`archive/${date}.json`));
-      els.archiveList.appendChild(div);
+      const btn = document.createElement('button');
+      btn.className = 'archive-item';
+      btn.innerHTML = `
+        <span class="archive-date">${formatDate(date + 'T12:00:00', { dateStyle: 'full' })}</span>
+        <span class="archive-count">${total_items} notícias</span>`;
+      btn.addEventListener('click', () => { location.hash = ''; loadData(`archive/${date}.json`); });
+      els.archiveList.appendChild(btn);
     });
   } catch {
-    els.archiveList.innerHTML = '<p style="color:var(--text-muted);padding:16px">No past editions available yet.</p>';
+    els.archiveList.innerHTML = '<p class="empty">Nenhuma edição anterior ainda.</p>';
   }
 }
 
@@ -303,27 +269,17 @@ async function renderArchive() {
 
 function route() {
   const hash = location.hash.replace(/^#\/?/, '');
-
-  if (!hash || hash === '/') {
-    if (_data) {
-      showOnly(els.home);
-      window.scrollTo(0, 0);
-    } else {
-      loadData();
-    }
-  } else if (hash.startsWith('item/')) {
+  if (hash.startsWith('item/')) {
     const id = hash.slice(5);
-    if (!_data) {
-      loadData().then(() => renderDetail(id));
-    } else {
-      renderDetail(id);
-    }
+    _data ? renderDetail(id) : loadData().then(() => renderDetail(id));
   } else if (hash === 'archive') {
     renderArchive();
+  } else {
+    _data ? renderHome() : loadData();
   }
 }
 
-// ── PWA Install Handler ─────────────────────────────────────────
+// ── PWA Install ─────────────────────────────────────────────────
 
 let _deferredInstall = null;
 
@@ -341,21 +297,17 @@ els.btnInstall.addEventListener('click', async () => {
   _deferredInstall = null;
 });
 
-// Service Worker Registration
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(console.error);
 }
 
-// ── Event Listeners ─────────────────────────────────────────────
-
 window.addEventListener('hashchange', route);
 els.btnArchive.addEventListener('click', () => { location.hash = 'archive'; });
 
-// ── Inline HTML Exposure ────────────────────────────────────────
 window.App = {
   loadData,
+  selectTheme,
   goHome() { location.hash = ''; },
 };
 
-// ── Bootstrap ───────────────────────────────────────────────────
 route();

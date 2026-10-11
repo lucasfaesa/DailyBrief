@@ -32,6 +32,7 @@ Orchestrates feeds in order: Hacker News → Reddit → RSS, returning a dedupli
 - Parsed via `feedparser` with customized `User-Agent`.
 - Comments: Fetches `{permalink}.json?limit=100&sort=top` with graceful error handling (`except Exception: pass`).
 - Throttles requests with a 500ms delay between subreddits.
+- Category hint per subreddit via `category_hint` in `config.yaml` (default `others`).
 
 ### RSS Feeds
 - Parsed using `feedparser.parse(url)`.

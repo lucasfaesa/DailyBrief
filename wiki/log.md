@@ -30,3 +30,7 @@ Generated 18 wiki documentation pages: index, log, overview, gotchas, convention
 ## [2026-10-11] refactor | converted codebase and documentation to English
 
 Translated all documentation, wiki pages, code docstrings/comments, pipeline prompts, and frontend text to English.
+
+## [2026-10-11] fix | LLM providers switched to plain REST (gemini-flash-latest, Groq OpenAI endpoint); retired gemini-2.0-flash and groq-SDK/httpx crash made every item fall back
+## [2026-10-11] feat | batched classify+summarize in pt-BR, strict theme guide, min_relevance filter, politics-only BR feeds, anime/gaming/economy feeds, per-subreddit hints
+## [2026-10-11] feat | frontend redesign: tabs inside sticky header, Destaques view, per-theme colors, pt-BR UI, AI summary in detail view; SW cache v2

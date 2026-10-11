@@ -40,12 +40,6 @@ def make_item(
         "comments": comments or [],
         "description": description.strip(),
         "category_hint": category_hint,
-        # Populated by LLM pipeline:
-        "tema": None,
-        "resumo_curto": None,
-        "relevancia": None,
-        "resumo_materia": None,
-        "resumo_comentarios": None,
     }
 
 
@@ -186,7 +180,7 @@ def collect_reddit(cfg: dict) -> list[dict]:
                 published=published,
                 comments=comments,
                 description=description,
-                category_hint="others",
+                category_hint=sub_cfg.get("category_hint", "others"),
             ))
 
         time.sleep(0.5)  # Respect Reddit rate limit

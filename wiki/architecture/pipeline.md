@@ -20,20 +20,24 @@ Enriches items in-place and returns the list.
 
 ## Processing Steps
 
-1. Extracts body text using `extract_text()`.
-2. Invokes `CLASSIFY_PROMPT`:
-   - Returns JSON: `{"theme": "...", "short_summary": "...", "relevance": 1-5}`.
-   - Validated via `_validate_classification()`.
-   - On parse failure, falls back to `category_hint` or `others`, title snippet, and relevance 1.
-3. If `relevance >= threshold` (default: 4) up to `max_high_relevance` (default: 30):
-   - Generates full summary (`resumo_materia` / `article_summary`) via `SUMMARY_PROMPT`.
-   - If comments exist, generates discussion overview (`resumo_comentarios` / `comments_summary`) via `COMMENTS_PROMPT`.
+1. Extracts body text for every item using `extract_text()`.
+2. Sends items in batches of `batch_size` (default 10, `batch_text_chars` of text each) to `BATCH_PROMPT`:
+   - Returns JSON: `{"items": [{"id", "theme", "relevance", "short_summary", "summary"}]}`; results are matched back by `id`.
+   - `THEME_GUIDE` defines each theme strictly (e.g. `national_politics` = Brazilian politics only; celebrities/sports/weather go to `others`).
+   - `summary` is stored as `article_summary` for every classified item.
+   - Missing/invalid result → fallback to `category_hint`, title snippet, relevance 2.
+3. Up to `max_high_relevance` items with `relevance >= relevance_threshold` and comments get `comments_summary` via `COMMENTS_PROMPT`.
+4. Items with `relevance < min_relevance` (default 2: trivial/clickbait) are dropped.
 
 ## Prompt Schemas
 
-- **Classification**: Factual, single-sentence summary (<= 120 chars), relevance scale 1–5.
-- **Article Summary**: 4–6 factual sentences detailing core story developments.
+- Prompts are in English; all summaries are written in Brazilian Portuguese.
+- **Batch**: theme, relevance 1–5, one-sentence summary (<= 140 chars), 3–5 sentence summary.
 - **Comments Summary**: 2–4 sentences characterizing community consensus and debate, explicitly framed as user opinions.
+
+Batching keeps a run at roughly `items / batch_size` + `max_high_relevance` LLM calls, within free-tier quotas.
+
+Self-check: `python src/test_pipeline.py`.
 
 ## Supported Themes (`ALLOWED_THEMES`)
 

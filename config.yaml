@@ -6,14 +6,17 @@
 # ── Collection ───────────────────────────────────────────────
 collection:
   lookback_hours: 24          # Window of time considered "today's news"
-  max_items_per_source: 30    # Maximum items per source before deduplication
-  max_high_relevance: 30      # Maximum high-relevance items (relevance >= 4) for full summaries
-  relevance_threshold: 4      # Minimum relevance score to trigger full article summary
+  max_items_per_source: 12    # Maximum items per source before deduplication (bounds LLM free-tier usage)
+  batch_size: 10              # Items classified + summarized per LLM call
+  batch_text_chars: 2000      # Article text sent per item inside a batch
+  min_relevance: 2            # Items rated below this (trivial/clickbait) are dropped
+  max_high_relevance: 15      # Maximum items that get a comments summary
+  relevance_threshold: 4      # Minimum relevance score for a comments summary
 
 # ── Hacker News ──────────────────────────────────────────────
 hacker_news:
   enabled: true
-  top_stories_limit: 30       # Top stories to inspect
+  top_stories_limit: 20       # Top stories to inspect
   max_comments: 30            # Maximum comments per post
 
 # ── Reddit ───────────────────────────────────────────────────
@@ -22,60 +25,47 @@ reddit:
   user_agent: "DailyBrief/1.0 (automated news digest; contact via GitHub)"
   max_comments: 30
   subreddits:
-    - name: worldnews
-      flair_filter: null
-    - name: technology
-      flair_filter: null
-    - name: artificial
-      flair_filter: null
-    - name: gaming
-      flair_filter: null
-    - name: anime
-      flair_filter: null
-    - name: science
-      flair_filter: null
-    - name: news
-      flair_filter: null
-    - name: programming
-      flair_filter: null
+    - { name: worldnews,   category_hint: international_politics }
+    - { name: brasil,      category_hint: others }
+    - { name: technology,  category_hint: technology }
+    - { name: programming, category_hint: technology }
+    - { name: brdev,       category_hint: technology }
+    - { name: artificial,  category_hint: ai }
+    - { name: gaming,      category_hint: gaming }
+    - { name: anime,       category_hint: anime }
+    - { name: science,     category_hint: science }
 
 # ── RSS Feeds ────────────────────────────────────────────────
 rss_feeds:
-  - name: "BBC News"
-    url: "https://feeds.bbci.co.uk/news/world/rss.xml"
-    category_hint: "international_politics"
-
-  - name: "Reuters Top News"
-    url: "https://feeds.reuters.com/reuters/topNews"
-    category_hint: "international_politics"
-
-  - name: "Reuters Technology"
-    url: "https://feeds.reuters.com/reuters/technologyNews"
-    category_hint: "technology"
-
-  - name: "TechCrunch"
-    url: "https://techcrunch.com/feed/"
-    category_hint: "technology"
-
-  - name: "The Verge"
-    url: "https://www.theverge.com/rss/index.xml"
-    category_hint: "technology"
-
-  - name: "Ars Technica"
-    url: "https://feeds.arstechnica.com/arstechnica/index"
-    category_hint: "technology"
-
-  - name: "MIT Technology Review"
-    url: "https://www.technologyreview.com/feed/"
-    category_hint: "ai"
-
-  - name: "Nature News"
-    url: "https://www.nature.com/nature.rss"
-    category_hint: "science"
-
-  - name: "CNBC Top News"
-    url: "https://www.cnbc.com/id/100003114/device/rss/rss.html"
-    category_hint: "economy"
+  # National politics (politics-only sections; general feeds dragged celebrities/sports in)
+  - { name: "G1 Política",          url: "https://g1.globo.com/rss/g1/politica/",                   category_hint: national_politics }
+  - { name: "Folha Poder",          url: "https://feeds.folha.uol.com.br/poder/rss091.xml",         category_hint: national_politics }
+  - { name: "Agência Brasil",       url: "https://agenciabrasil.ebc.com.br/rss/politica/feed.xml",  category_hint: national_politics }
+  - { name: "Poder360",             url: "https://www.poder360.com.br/feed/",                       category_hint: national_politics }
+  # World
+  - { name: "BBC Brasil",           url: "https://www.bbc.com/portuguese/index.xml",                category_hint: international_politics }
+  - { name: "G1 Mundo",             url: "https://g1.globo.com/rss/g1/mundo/",                      category_hint: international_politics }
+  - { name: "BBC World",            url: "https://feeds.bbci.co.uk/news/world/rss.xml",             category_hint: international_politics }
+  # Technology / AI
+  - { name: "Tecnoblog",            url: "https://tecnoblog.net/feed/",                             category_hint: technology }
+  - { name: "The Verge",            url: "https://www.theverge.com/rss/index.xml",                  category_hint: technology }
+  - { name: "Ars Technica",         url: "https://feeds.arstechnica.com/arstechnica/index",         category_hint: technology }
+  - { name: "TechCrunch",           url: "https://techcrunch.com/feed/",                            category_hint: technology }
+  - { name: "MIT Technology Review", url: "https://www.technologyreview.com/feed/",                  category_hint: ai }
+  # Gaming
+  - { name: "IGN",                  url: "https://feeds.feedburner.com/ign/all",                    category_hint: gaming }
+  - { name: "PC Gamer",             url: "https://www.pcgamer.com/rss/",                            category_hint: gaming }
+  - { name: "Eurogamer",            url: "https://www.eurogamer.net/feed",                          category_hint: gaming }
+  # Anime
+  - { name: "Anime News Network",   url: "https://www.animenewsnetwork.com/all/rss.xml",            category_hint: anime }
+  - { name: "Crunchyroll News",     url: "https://cr-news-api-service.prd.crunchyrollsvc.com/v1/en-US/rss", category_hint: anime }
+  - { name: "MyAnimeList",          url: "https://myanimelist.net/rss/news.xml",                    category_hint: anime }
+  # Science
+  - { name: "Nature News",          url: "https://www.nature.com/nature.rss",                       category_hint: science }
+  # Economy
+  - { name: "G1 Economia",          url: "https://g1.globo.com/rss/g1/economia/",                   category_hint: economy }
+  - { name: "InfoMoney",            url: "https://www.infomoney.com.br/feed/",                      category_hint: economy }
+  - { name: "CNBC Top News",        url: "https://www.cnbc.com/id/100003114/device/rss/rss.html",   category_hint: economy }
 
 # ── Text Extraction ──────────────────────────────────────────
 extraction:
@@ -84,14 +74,14 @@ extraction:
 
 # ── LLM Layer ────────────────────────────────────────────────
 llm:
-  rate_limit_pause_seconds: 1.5   # Delay between LLM invocations
-  max_retries_per_provider: 2     # Attempts before switching providers
+  rate_limit_pause_seconds: 6     # Delay between LLM invocations (Gemini free tier ≈ 10 RPM)
+  max_retries_per_provider: 4     # Attempts before switching providers
   json_fix_retries: 2             # Attempts to repair invalid JSON
-  backoff_base_seconds: 2         # Exponential backoff base in seconds
+  backoff_base_seconds: 4         # Exponential backoff base in seconds
 
   providers:
     - name: "gemini"
-      model: "gemini-2.0-flash"
+      model: "gemini-flash-latest"   # alias tracks the current Flash; 2.0 was retired
       env_key: "GEMINI_API_KEY"
 
     - name: "groq"

@@ -13,7 +13,7 @@ Unified interface providing automated fallback between providers, circuit breake
 ## Core Components
 
 - **`LLMRouter`**: Main entrypoint exposing `generate(prompt)` and `generate_json(prompt)`.
-- **Providers (`GeminiProvider`, `GroqProvider`)**: Wrap model SDKs with unified invocation and error detection. Clients initialize lazily.
+- **Providers (`GeminiProvider`, `GroqProvider`)**: Plain REST calls via `requests` (no vendor SDKs) requesting JSON output. Gemini uses the `gemini-flash-latest` alias; Groq uses the OpenAI-compatible endpoint. Non-200 responses raise `ProviderError` with the response body, so the CI log shows the real cause.
 - **`LLMStats`**: Tracks calls per provider, failed attempts, and JSON re-evaluations.
 
 ## Circuit Breaker and Execution Flow
@@ -22,7 +22,7 @@ Unified interface providing automated fallback between providers, circuit breake
 2. Skips any provider marked in the `_exhausted` set.
 3. Attempts calls up to `max_retries_per_provider` with `rate_limit_pause_seconds` delay:
    - **Success**: Records metrics and returns string response.
-   - **Retryable error (429, quota, 5xx)**: Waits `backoff_base ** attempt` seconds.
+   - **Retryable error (HTTP 429/5xx, timeout, connection, malformed response)**: Waits `backoff_base ** attempt` seconds.
    - **Fatal error**: Marks provider as `_exhausted` and skips to next provider.
 4. If a provider's retry attempts are exhausted, marks it as `_exhausted`.
 5. If all providers fail, returns `None` to let the pipeline handle fallback.

@@ -1,13 +1,13 @@
 {
   "name": "DailyBrief",
   "short_name": "DailyBrief",
-  "description": "Automated AI-powered daily news digest",
+  "description": "Resumo diário de notícias gerado por IA",
   "start_url": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#0f172a",
-  "theme_color": "#0f172a",
-  "lang": "en",
+  "background_color": "#111214",
+  "theme_color": "#111214",
+  "lang": "pt-BR",
   "icons": [
     {
       "src": "icons/icon-192.png",
