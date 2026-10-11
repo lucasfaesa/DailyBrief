@@ -37,3 +37,4 @@ Translated all documentation, wiki pages, code docstrings/comments, pipeline pro
 ## [2026-10-11] fix | 503 no longer disables a provider for the whole run; backoff capped at 60s; added gemini-flash-lite fallback; Groq model → openai/gpt-oss-120b (llama-3.3-70b removed); dedupe by title too
 ## [2026-10-11] fix | theme tabs wrap instead of horizontal scroll (Animes/Geral were hidden on desktop); SW cache v3
 ## [2026-10-11] feat | new "DB" serif monogram app icon; source docs/icons/icon.svg (PNGs rendered with headless Chrome); removed src/generate_icons.py; SW cache v4
+## [2026-10-11] feat | Destaques: one highlight card per theme instead of global top-5

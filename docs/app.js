@@ -27,7 +27,6 @@ const THEME_COMPAT = {
 };
 
 const HOME_PER_THEME = 4;
-const HIGHLIGHTS = 5;
 
 let _data = null;
 let _byId = {};
@@ -148,7 +147,8 @@ function selectTheme(theme) {
 
 function renderHome() {
   if (_activeTheme === 'all') {
-    const top = [...(_data.all_items || [])].sort((a, b) => relOf(b) - relOf(a)).slice(0, HIGHLIGHTS);
+    // One highlight per theme (its most relevant item); the strongest overall leads
+    const top = Object.values(_byTheme).filter(l => l.length).map(l => l[0]).sort((a, b) => relOf(b) - relOf(a));
     const topIds = new Set(top.map(i => i.id));
     let html = top.length ? `<section class="highlights">${top.map((it, i) => card(it, i === 0 ? 'lead' : 'feature')).join('')}</section>` : '';
     for (const [key, t] of Object.entries(THEMES)) {

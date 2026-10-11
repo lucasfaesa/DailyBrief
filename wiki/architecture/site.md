@@ -20,7 +20,7 @@ Pure HTML5, CSS3, and modern vanilla JavaScript. No bundling, transpilation, or 
 
 ## Hash Routing (`app.js`)
 
-- `#/`: Home feed. Theme tabs live inside the sticky header (one sticky block, so they never slide under it) and wrap onto multiple rows (a horizontal scroll strip hid tabs on desktop). Tab "Destaques" shows the top-5 items by relevance plus the top 4 per theme with a "ver todas" link; a theme tab lists all its items. Every theme always has a tab.
+- `#/`: Home feed. Theme tabs live inside the sticky header (one sticky block, so they never slide under it) and wrap onto multiple rows (a horizontal scroll strip hid tabs on desktop). Tab "Destaques" shows one highlight per theme (its most relevant item; the most relevant overall is the large lead card) plus the top 4 per theme with a "ver todas" link; a theme tab lists all its items. Every theme always has a tab.
 - Items are grouped client-side from `all_items` (`data.themes` is not read); legacy Portuguese theme keys are mapped via `THEME_COMPAT`.
 - UI language is pt-BR; theme accent colors come from `THEMES` in `app.js` via the `--c` CSS variable.
 - `#/item/<id>`: Detail view with "Resumo por IA" (`article_summary`) and community reactions.
