@@ -50,11 +50,11 @@ THEME_GUIDE = """- national_politics: ONLY Brazilian politics — federal/state 
 - game_dev: game development and the game industry as a business — studio layoffs, closures, hiring, growth, funding, acquisitions, revenue, engines (Unity, Unreal, Godot), dev tools, postmortems, developer working conditions.
 - custom_engines: building game/graphics engines from scratch — rendering and graphics programming, engine architecture, low-level performance, GPU APIs (Vulkan, DirectX, Metal), open-source engines like Bevy, Stride, Flax, O3DE. Unity/Unreal/Godot product news stays in game_dev.
 - anime: anime, manga, Japanese animation and pop culture.
-- movies: films, TV series and streaming — releases, trailers, reviews, box office, studios, festivals, awards. Anime goes to anime.
+- movies: films, TV series and streaming — releases, trailers, reviews, box office, studios, festivals, awards. Anime goes to anime; telenovelas and celebrity gossip are not movies.
 - crypto: cryptocurrencies, Bitcoin, Ethereum, blockchain, exchanges, stablecoins, crypto regulation and prices.
 - science: research, space, health studies, environment science.
 - economy: markets, inflation, interest rates, companies' finances, jobs, trade (crypto goes to crypto).
-- others: everything else (celebrities, sports, weather, crime, lifestyle)."""
+- others: everything else (sports, weather, crime, lifestyle)."""
 
 BATCH_PROMPT = """You are an objective news editor for a Brazilian reader.
 Classify and summarize EACH article below. Return ONLY a JSON object: {{"items": [...]}} with one entry per article:
@@ -68,6 +68,7 @@ Theme definitions (follow strictly, the source hint can be wrong):
 {guide}
 
 Rules: be strictly factual, use only the given text, no opinions. If the text is only a title, keep the summary short.
+The reader does NOT want gossip: celebrity personal lives, relationships, influencers, reality shows (BBB, A Fazenda), telenovelas/soap operas and their actors, red carpets, "relembre" nostalgia pieces. Give any such article relevance 1 (it will be dropped), whatever its theme.
 
 {articles}
 """
