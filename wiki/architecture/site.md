@@ -24,6 +24,7 @@ Pure HTML5, CSS3, and modern vanilla JavaScript. No bundling, transpilation, or 
 - Items are grouped client-side from `all_items` (`data.themes` is not read); legacy Portuguese theme keys are mapped via `THEME_COMPAT`.
 - UI language is pt-BR; theme accent colors come from `THEMES` in `app.js` via the `--c` CSS variable.
 - `#/item/<id>`: Detail view with "Resumo por IA" (`article_summary`) and community reactions.
+- Opening a detail view marks the item as read in `localStorage` (`db-read`, last 1000 ids). Cards show read items muted with "✓ Lida"; the most recent one gets an accent bar and "Última aberta".
 - `#/archive`: Historical edition selector.
 
 ## Schema of `data.json`

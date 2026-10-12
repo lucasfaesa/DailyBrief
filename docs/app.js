@@ -38,6 +38,16 @@ let _byTheme = {};
 let _activeTheme = 'all';
 let _homeScroll = 0;
 
+// Opened items persist across sessions; capped so localStorage never grows unbounded
+const READ_KEY = 'db-read';
+const READ_MAX = 1000;
+let _read = JSON.parse(localStorage.getItem(READ_KEY) || '[]');
+
+function markRead(id) {
+  _read = [..._read.filter(r => r !== id), id].slice(-READ_MAX);
+  localStorage.setItem(READ_KEY, JSON.stringify(_read));
+}
+
 const $ = id => document.getElementById(id);
 
 const els = {
@@ -197,14 +207,17 @@ function card(item, variant = '') {
   const t = THEMES[themeOf(item)];
   const summary = variant === 'lead' ? (longOf(item) || shortOf(item)) : shortOf(item);
   const hasSummary = summary && summary !== item.title;
+  const last = _read[_read.length - 1] === item.id;
+  const read = last || _read.includes(item.id);
   return `
-    <button class="news-card ${variant}" data-id="${escHtml(item.id)}" style="--c:${t.color}">
+    <button class="news-card ${variant}${read ? ' read' : ''}${last ? ' last' : ''}" data-id="${escHtml(item.id)}" style="--c:${t.color}">
       ${variant ? `<span class="kicker">${t.label}</span>` : ''}
       <span class="card-title">${escHtml(item.title)}</span>
       ${hasSummary ? `<span class="card-summary">${escHtml(summary)}</span>` : ''}
       <span class="card-meta">
         <span>${escHtml(item.source)}</span>
         ${item.published ? `<span>· ${timeAgo(item.published)}</span>` : ''}
+        ${last ? '<span class="read-tag">Última aberta</span>' : read ? '<span class="read-tag">✓ Lida</span>' : ''}
         ${relOf(item) >= 4 ? '<span class="badge">Importante</span>' : ''}
       </span>
     </button>`;
@@ -215,6 +228,7 @@ function card(item, variant = '') {
 function renderDetail(id) {
   const item = _byId[id];
   if (!item) { location.hash = ''; return; }
+  markRead(id);
   const t = THEMES[themeOf(item)];
   const summary = longOf(item) || (shortOf(item) !== item.title ? shortOf(item) : '');
   const comments = commentsOf(item);
