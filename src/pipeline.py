@@ -19,7 +19,10 @@ ALLOWED_THEMES = [
     "ai",
     "gaming",
     "game_dev",
+    "custom_engines",
     "anime",
+    "movies",
+    "crypto",
     "science",
     "economy",
     "others",
@@ -45,10 +48,13 @@ THEME_GUIDE = """- national_politics: ONLY Brazilian politics — federal/state 
 - ai: artificial intelligence, machine learning, LLMs.
 - gaming: video games from the player's side — releases, reviews, trailers, updates, consoles.
 - game_dev: game development and the game industry as a business — studio layoffs, closures, hiring, growth, funding, acquisitions, revenue, engines (Unity, Unreal, Godot), dev tools, postmortems, developer working conditions.
+- custom_engines: building game/graphics engines from scratch — rendering and graphics programming, engine architecture, low-level performance, GPU APIs (Vulkan, DirectX, Metal), open-source engines like Bevy, Stride, Flax, O3DE. Unity/Unreal/Godot product news stays in game_dev.
 - anime: anime, manga, Japanese animation and pop culture.
+- movies: films, TV series and streaming — releases, trailers, reviews, box office, studios, festivals, awards. Anime goes to anime.
+- crypto: cryptocurrencies, Bitcoin, Ethereum, blockchain, exchanges, stablecoins, crypto regulation and prices.
 - science: research, space, health studies, environment science.
-- economy: markets, inflation, interest rates, companies' finances, jobs, trade.
-- others: everything else (entertainment, celebrities, TV, sports, weather, crime, lifestyle)."""
+- economy: markets, inflation, interest rates, companies' finances, jobs, trade (crypto goes to crypto).
+- others: everything else (celebrities, sports, weather, crime, lifestyle)."""
 
 BATCH_PROMPT = """You are an objective news editor for a Brazilian reader.
 Classify and summarize EACH article below. Return ONLY a JSON object: {{"items": [...]}} with one entry per article:

@@ -16,7 +16,10 @@ const THEMES = {
   science:                { label: 'Ciência',           color: '#12a594' },
   gaming:                 { label: 'Games',             color: '#f76b15' },
   game_dev:               { label: 'Game Dev',          color: '#ffb224' },
+  custom_engines:         { label: 'Custom Engines',    color: '#0090ff' },
   anime:                  { label: 'Animes',            color: '#ff5d8f' },
+  movies:                 { label: 'Filmes & Séries',   color: '#e54666' },
+  crypto:                 { label: 'Cripto',            color: '#f7931a' },
   others:                 { label: 'Geral',             color: '#8b8d98' },
 };
 

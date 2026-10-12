@@ -194,8 +194,7 @@ def collect_reddit(cfg: dict) -> list[dict]:
 def collect_rss(cfg: dict) -> list[dict]:
     """Ingests news entries from configured RSS feeds."""
     limit_per: int = cfg["collection"]["max_items_per_source"]
-    lookback: int = cfg["collection"]["lookback_hours"]
-    cutoff = _cutoff(lookback)
+    default_lookback: int = cfg["collection"]["lookback_hours"]
 
     items: list[dict] = []
 
@@ -203,6 +202,8 @@ def collect_rss(cfg: dict) -> list[dict]:
         name: str = feed_cfg["name"]
         url: str = feed_cfg["url"]
         hint: str = feed_cfg.get("category_hint", "others")
+        # Low-frequency blogs (e.g. engine dev) would almost never post inside the default window
+        cutoff = _cutoff(feed_cfg.get("lookback_hours", default_lookback))
 
         try:
             feed = feedparser.parse(url)
@@ -215,7 +216,9 @@ def collect_rss(cfg: dict) -> list[dict]:
             if count >= limit_per:
                 break
 
-            pub_ts = time.mktime(entry.published_parsed) if entry.get("published_parsed") else None
+            # Atom feeds often carry only <updated>; without it, old posts slipped through as "no date"
+            parsed = entry.get("published_parsed") or entry.get("updated_parsed")
+            pub_ts = time.mktime(parsed) if parsed else None
             if not _within(pub_ts, cutoff):
                 continue
 

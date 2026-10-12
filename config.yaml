@@ -32,6 +32,10 @@ reddit:
     - { name: LocalLLaMA,  category_hint: ai }
     - { name: MachineLearning, category_hint: ai }
     - { name: gamedev,     category_hint: game_dev }
+    - { name: gameenginedevs, category_hint: custom_engines }
+    - { name: GraphicsProgramming, category_hint: custom_engines }
+    - { name: movies,      category_hint: movies }
+    - { name: CryptoCurrency, category_hint: crypto }
     - { name: gaming,      category_hint: gaming }
     - { name: anime,       category_hint: anime }
     - { name: science,     category_hint: science }
@@ -77,6 +81,29 @@ rss_feeds:
   - { name: "Unity Blog",           url: "https://unity.com/blog/rss",                              category_hint: game_dev }
   - { name: "Unreal Engine News",   url: "https://www.unrealengine.com/en-US/rss",                  category_hint: game_dev }
   - { name: "Godot News",           url: "https://godotengine.org/rss.xml",                         category_hint: game_dev }
+  # Custom engines (low-frequency blogs → 7-day window)
+  - { name: "Graphics Programming Weekly", url: "https://www.jendrikillner.com/tags/weekly/index.xml", category_hint: custom_engines, lookback_hours: 168 }
+  - { name: "Bevy News",            url: "https://bevyengine.org/atom.xml",                         category_hint: custom_engines, lookback_hours: 168 }
+  - { name: "Aras Pranckevičius",   url: "https://aras-p.info/atom.xml",                            category_hint: custom_engines, lookback_hours: 168 }
+  - { name: "The Real MJP",         url: "https://therealmjp.github.io/index.xml",                  category_hint: custom_engines, lookback_hours: 168 }
+  - { name: "fgiesen (ryg blog)",   url: "https://fgiesen.wordpress.com/feed/",                     category_hint: custom_engines, lookback_hours: 168 }
+  - { name: "Interplay of Light",   url: "https://interplayoflight.wordpress.com/feed/",            category_hint: custom_engines, lookback_hours: 168 }
+  - { name: "Voxagon (Teardown)",   url: "https://blog.voxagon.se/feed.xml",                        category_hint: custom_engines, lookback_hours: 168 }
+  - { name: "Flax Engine",          url: "https://flaxengine.com/blog/feed/",                       category_hint: custom_engines, lookback_hours: 168 }
+  - { name: "Stride Engine",        url: "https://www.stride3d.net/feed.xml",                       category_hint: custom_engines, lookback_hours: 168 }
+  # Movies & TV
+  - { name: "Variety",              url: "https://variety.com/feed/",                               category_hint: movies }
+  - { name: "Deadline",             url: "https://deadline.com/feed/",                              category_hint: movies }
+  - { name: "IndieWire",            url: "https://www.indiewire.com/feed/",                         category_hint: movies }
+  - { name: "/Film",                url: "https://www.slashfilm.com/feed/",                         category_hint: movies }
+  - { name: "Pipoca Moderna",       url: "https://pipocamoderna.com.br/feed/",                      category_hint: movies }
+  # Crypto
+  - { name: "CoinDesk",             url: "https://www.coindesk.com/arc/outboundfeeds/rss/",         category_hint: crypto }
+  - { name: "Cointelegraph",        url: "https://cointelegraph.com/rss",                           category_hint: crypto }
+  - { name: "Decrypt",              url: "https://decrypt.co/feed",                                 category_hint: crypto }
+  - { name: "The Block",            url: "https://www.theblock.co/rss.xml",                         category_hint: crypto }
+  - { name: "Livecoins",            url: "https://livecoins.com.br/feed/",                          category_hint: crypto }
+  - { name: "Portal do Bitcoin",    url: "https://portaldobitcoin.uol.com.br/feed/",                category_hint: crypto }
   # Anime
   - { name: "Anime News Network",   url: "https://www.animenewsnetwork.com/all/rss.xml",            category_hint: anime }
   - { name: "Crunchyroll News",     url: "https://cr-news-api-service.prd.crunchyrollsvc.com/v1/en-US/rss", category_hint: anime }
@@ -121,6 +148,9 @@ themes:
   - ai
   - gaming
   - game_dev
+  - custom_engines
+  - movies
+  - crypto
   - anime
   - science
   - economy
