@@ -148,8 +148,8 @@ async function loadData(path = 'data.json') {
 
 function renderTabs() {
   const tabs = [['all', 'Destaques', _data.all_items?.length || 0],
-    ['favorites', '★ Favoritos', _favs.length],
-    ...Object.entries(THEMES).map(([k, t]) => [k, t.label, _byTheme[k].length])];
+    ...Object.entries(THEMES).map(([k, t]) => [k, t.label, _byTheme[k].length]),
+    ['favorites', '★ Favoritos', _favs.length]];
   els.tabs.innerHTML = tabs.map(([key, label, n]) => `
     <button class="tab-btn${key === _activeTheme ? ' active' : ''}" role="tab" data-theme="${key}"
             style="--c:${THEMES[key]?.color || 'var(--accent)'}">
@@ -165,6 +165,7 @@ function selectTheme(theme) {
     const on = btn.dataset.theme === theme;
     btn.classList.toggle('active', on);
     btn.setAttribute('aria-selected', on);
+    if (on) revealTab(btn);
   });
   _homeScroll = 0;
   if (location.hash.replace(/^#\/?/, '')) location.hash = '';
@@ -220,6 +221,13 @@ function renderHome() {
   updateSpy();
 }
 
+// Mobile tab strip scrolls horizontally: bring a tab into view without moving the page vertically
+function revealTab(btn) {
+  const strip = els.tabs;
+  if (strip.scrollWidth <= strip.clientWidth) return;
+  strip.scrollTo({ left: btn.offsetLeft - (strip.clientWidth - btn.offsetWidth) / 2, behavior: 'smooth' });
+}
+
 // On the Destaques page, light up the tab of the theme section currently under the header
 function updateSpy() {
   let current = null;
@@ -230,7 +238,11 @@ function updateSpy() {
       current = sec.dataset.theme;
     }
   }
-  els.tabs.querySelectorAll('.tab-btn').forEach(btn => btn.classList.toggle('spy', btn.dataset.theme === current));
+  els.tabs.querySelectorAll('.tab-btn').forEach(btn => {
+    const on = btn.dataset.theme === current;
+    if (on && !btn.classList.contains('spy')) revealTab(btn);
+    btn.classList.toggle('spy', on);
+  });
 }
 
 let _spyQueued = false;
