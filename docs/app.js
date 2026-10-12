@@ -181,7 +181,7 @@ function renderHome() {
       const items = _byTheme[key].filter(i => !topIds.has(i.id));
       if (!items.length) continue;
       html += `
-        <section class="theme-section" style="--c:${t.color}">
+        <section class="theme-section" data-theme="${key}" style="--c:${t.color}">
           <h2 class="section-title"><span>${t.label}</span></h2>
           <div class="card-list">${items.slice(0, HOME_PER_THEME).map(i => card(i)).join('')}</div>
           ${items.length > HOME_PER_THEME
@@ -217,7 +217,28 @@ function renderHome() {
 
   showOnly(els.home);
   window.scrollTo(0, _homeScroll);
+  updateSpy();
 }
+
+// On the Destaques page, light up the tab of the theme section currently under the header
+function updateSpy() {
+  let current = null;
+  if (_activeTheme === 'all' && !els.home.classList.contains('hidden')) {
+    const line = $('app-header').getBoundingClientRect().bottom + 24;
+    for (const sec of els.home.querySelectorAll('.theme-section[data-theme]')) {
+      if (sec.getBoundingClientRect().top > line) break;
+      current = sec.dataset.theme;
+    }
+  }
+  els.tabs.querySelectorAll('.tab-btn').forEach(btn => btn.classList.toggle('spy', btn.dataset.theme === current));
+}
+
+let _spyQueued = false;
+window.addEventListener('scroll', () => {
+  if (_spyQueued) return;
+  _spyQueued = true;
+  requestAnimationFrame(() => { _spyQueued = false; updateSpy(); });
+}, { passive: true });
 
 function empty() {
   return '<p class="empty">Nenhuma notícia neste tema hoje.</p>';

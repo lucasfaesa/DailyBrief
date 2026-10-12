@@ -113,6 +113,7 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 .tab-btn:hover { color: var(--text); background: var(--surface); }
 .tab-btn.active { background: var(--c); color: #fff; }
 .tab-btn.active[data-theme="all"] { color: #111214; }
+.tab-btn.spy { color: var(--c); box-shadow: inset 0 0 0 1.5px var(--c); }
 .tab-count { font-size: .7rem; font-weight: 700; opacity: .65; font-variant-numeric: tabular-nums; }
 
 /* ── Layout ──────────────────────────────────────────────────── */
