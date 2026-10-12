@@ -25,6 +25,7 @@ Pure HTML5, CSS3, and modern vanilla JavaScript. No bundling, transpilation, or 
 - UI language is pt-BR; theme accent colors come from `THEMES` in `app.js` via the `--c` CSS variable.
 - `#/item/<id>`: Detail view with "Resumo por IA" (`article_summary`) and community reactions.
 - Opening a detail view marks the item as read in `localStorage` (`db-read`, last 1000 ids). Cards show read items muted with "✓ Lida"; the most recent one gets an accent bar and "Última aberta".
+- Favorites: "☆ Favoritar" in the detail view stores a full copy of the item in `localStorage` (`db-favs`), since `data.json` is replaced every run. Tab "★ Favoritos" lists them newest first; the detail view resolves ids from the current data first, then from favorites.
 - `#/archive`: Historical edition selector.
 
 ## Schema of `data.json`

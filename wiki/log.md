@@ -43,3 +43,4 @@ Translated all documentation, wiki pages, code docstrings/comments, pipeline pro
 ## [2026-10-11] feat | favicon (favicon.svg + 32px PNG fallback); SW cache v7
 ## [2026-10-12] feat | new themes custom_engines (graphics/engine blogs, 7-day window, r/gameenginedevs, r/GraphicsProgramming), movies (Variety, Deadline, IndieWire, /Film, Pipoca Moderna, r/movies), crypto (CoinDesk, Cointelegraph, Decrypt, The Block, Livecoins, Portal do Bitcoin, r/CryptoCurrency); per-feed lookback_hours; RSS date falls back to <updated>; SW cache v8
 ## [2026-10-12] feat | read tracking: opened items muted with "✓ Lida", last opened highlighted (localStorage db-read); SW cache v9
+## [2026-10-12] feat | per-device favorites (localStorage db-favs, full item copies so they survive new runs) with ★ Favoritos tab; SW cache v10

@@ -48,6 +48,17 @@ function markRead(id) {
   localStorage.setItem(READ_KEY, JSON.stringify(_read));
 }
 
+// Favorites keep a full copy of the item: data.json is replaced every run, an id alone would dangle
+const FAV_KEY = 'db-favs';
+let _favs = JSON.parse(localStorage.getItem(FAV_KEY) || '[]');
+const isFav = id => _favs.some(f => f.id === id);
+
+function toggleFav(item) {
+  _favs = isFav(item.id) ? _favs.filter(f => f.id !== item.id) : [{ ...item, saved_at: new Date().toISOString() }, ..._favs];
+  localStorage.setItem(FAV_KEY, JSON.stringify(_favs));
+  renderTabs();
+}
+
 const $ = id => document.getElementById(id);
 
 const els = {
@@ -137,9 +148,10 @@ async function loadData(path = 'data.json') {
 
 function renderTabs() {
   const tabs = [['all', 'Destaques', _data.all_items?.length || 0],
+    ['favorites', '★ Favoritos', _favs.length],
     ...Object.entries(THEMES).map(([k, t]) => [k, t.label, _byTheme[k].length])];
   els.tabs.innerHTML = tabs.map(([key, label, n]) => `
-    <button class="tab-btn" role="tab" data-theme="${key}"
+    <button class="tab-btn${key === _activeTheme ? ' active' : ''}" role="tab" data-theme="${key}"
             style="--c:${THEMES[key]?.color || 'var(--accent)'}">
       ${label}<span class="tab-count">${n}</span>
     </button>`).join('');
@@ -177,6 +189,14 @@ function renderHome() {
         </section>`;
     }
     els.home.innerHTML = html || empty();
+  } else if (_activeTheme === 'favorites') {
+    els.home.innerHTML = `
+      <section class="theme-section" style="--c:var(--accent)">
+        <h2 class="page-title">Favoritos</h2>
+        ${_favs.length
+          ? `<div class="card-list">${_favs.map(i => card(i)).join('')}</div>`
+          : '<p class="empty">Nenhum favorito ainda. Abra uma matéria e toque em ☆ Favoritar.</p>'}
+      </section>`;
   } else {
     const t = THEMES[_activeTheme];
     const items = _byTheme[_activeTheme];
@@ -218,6 +238,7 @@ function card(item, variant = '') {
         <span>${escHtml(item.source)}</span>
         ${item.published ? `<span>· ${timeAgo(item.published)}</span>` : ''}
         ${last ? '<span class="read-tag">Última aberta</span>' : read ? '<span class="read-tag">✓ Lida</span>' : ''}
+        ${isFav(item.id) ? '<span class="fav-tag" aria-label="Favorito">★</span>' : ''}
         ${relOf(item) >= 4 ? '<span class="badge">Importante</span>' : ''}
       </span>
     </button>`;
@@ -226,7 +247,7 @@ function card(item, variant = '') {
 // ── Detail ──────────────────────────────────────────────────────
 
 function renderDetail(id) {
-  const item = _byId[id];
+  const item = _byId[id] || _favs.find(f => f.id === id);
   if (!item) { location.hash = ''; return; }
   markRead(id);
   const t = THEMES[themeOf(item)];
@@ -238,6 +259,7 @@ function renderDetail(id) {
     <span class="kicker">${t.label}</span>
     <h1 class="detail-title">${escHtml(item.title)}</h1>
     <p class="detail-meta">${escHtml(item.source)}${item.published ? ` · ${formatDate(item.published)}` : ''}</p>
+    <button id="btn-fav" class="btn-fav"></button>
 
     <section class="detail-section ai">
       <h3>Resumo por IA</h3>
@@ -255,6 +277,16 @@ function renderDetail(id) {
 
     <a class="btn-primary" href="${escHtml(item.url)}" target="_blank" rel="noopener noreferrer">Ler matéria original ↗</a>
   `;
+  const favBtn = $('btn-fav');
+  const paintFav = () => {
+    const on = isFav(item.id);
+    favBtn.textContent = on ? '★ Favoritado' : '☆ Favoritar';
+    favBtn.classList.toggle('on', on);
+    favBtn.setAttribute('aria-pressed', on);
+  };
+  favBtn.addEventListener('click', () => { toggleFav(item); paintFav(); });
+  paintFav();
+
   showOnly(els.detail);
   window.scrollTo(0, 0);
 }

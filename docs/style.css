@@ -219,7 +219,21 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 .btn-back:hover { color: var(--text); }
 
 .detail-title { font-family: var(--serif); font-size: clamp(1.6rem, 5vw, 2.3rem); line-height: 1.15; letter-spacing: -.02em; margin: 8px 0 10px; }
-.detail-meta { font-size: .82rem; color: var(--muted); margin-bottom: 22px; }
+.detail-meta { font-size: .82rem; color: var(--muted); margin-bottom: 14px; }
+
+.btn-fav {
+  margin-bottom: 22px;
+  padding: 7px 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: .85rem; font-weight: 700;
+  color: var(--muted);
+  transition: color var(--ease), border-color var(--ease), background var(--ease);
+}
+.btn-fav:hover { color: var(--text); border-color: var(--muted); }
+.btn-fav.on { color: #111214; background: var(--accent); border-color: var(--accent); }
+.fav-tag { color: var(--accent); font-size: .85rem; }
+.tab-btn.active[data-theme="favorites"] { color: #111214; }
 
 .detail-section {
   background: var(--surface);
