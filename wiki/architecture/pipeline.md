@@ -27,7 +27,8 @@ Enriches items in-place and returns the list.
    - `summary` is stored as `article_summary` for every classified item.
    - Missing/invalid result → fallback to `category_hint`, title snippet, relevance 2.
 3. Up to `max_high_relevance` items with `relevance >= relevance_threshold` and comments get `comments_summary` via `COMMENTS_PROMPT`.
-4. Items with `relevance < min_relevance` (default 2: trivial/clickbait) are dropped. The prompt forces relevance 1 for gossip (celebrity lives, reality shows, telenovelas), so those are dropped too.
+4. Items with `relevance < min_relevance` (default 2: trivial/clickbait) are dropped. The prompt forces relevance 1 for gossip (celebrity lives, reality shows, telenovelas) and for non-IT contests/processes outside or inside ES, so those are dropped too.
+5. **Deterministic `concursos` guard** (`_is_it_concurso`): after LLM classification, any item in the `concursos` theme that contains no IT-related keywords (word-boundary regex for short tokens like `\bti\b`, `\binformática\b`, `\bsoftware\b`; substring match for longer phrases like "tecnologia da informação", "analista de sistemas") has its relevance forced to 1 and is dropped. This is a hard safety net in case the LLM ignores the non-IT drop instruction.
 
 ## Prompt Schemas
 

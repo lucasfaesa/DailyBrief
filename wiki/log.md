@@ -50,3 +50,6 @@ Translated all documentation, wiki pages, code docstrings/comments, pipeline pro
 ## [2026-10-12] feat | mobile tabs: single swipeable row (header 5 rows → 1), auto-scroll to active/spied tab; Favoritos moved to last tab; SW cache v12
 ## [2026-10-12] feat | new concursos theme for ES (IT and high school level) with Folha Vitória, Concursos no Brasil, TJES, IFES and UFES feeds; SW cache v13
 ## [2026-10-12] feat | Destaques: top 5 highlights overall across all categories without category repetition; SW cache v14
+## [2026-10-12] fix | concursos: restricted prompt to strictly IT positions in ES, discarding general education, admin, healthcare, and proficiency exams (relevance 1)
+
+## [2026-10-12] fix | concursos: added deterministic IT keyword guard (_is_it_concurso) to drop non-IT items that bypass LLM relevance-1 rule

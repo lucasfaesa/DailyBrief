@@ -56,7 +56,7 @@ THEME_GUIDE = """- national_politics: ONLY Brazilian politics — federal/state 
 - crypto: cryptocurrencies, Bitcoin, Ethereum, blockchain, exchanges, stablecoins, crypto regulation and prices.
 - science: research, space, health studies, environment science.
 - economy: markets, inflation, interest rates, companies' finances, jobs, trade (crypto goes to crypto).
-- concursos: public contests (concursos públicos) and simplified selection processes / temporary contracts (processos seletivos simplificados / contratações temporárias / DT) strictly located in the state of Espírito Santo (ES), Brazil. MUST be specifically for Information Technology (TI/TIC, software, systems, infra, data, cybersecurity, support) OR general High School / technical level (nível médio / técnico / assistente administrativo). Any contest outside Espírito Santo (ES) or for other specific higher-education degrees (health, medicine, nursing, pedagogy, teachers, agronomy) or generic news that is not an active/upcoming hiring process or edital are NOT allowed here and must receive relevance 1.
+- concursos: public contests (concursos públicos) and simplified selection processes / temporary contracts (processos seletivos simplificados / contratações temporárias / DT) strictly located in the state of Espírito Santo (ES), Brazil. MUST be specifically for Information Technology (TI/TIC, software development, systems analysis, data, cloud, cybersecurity, network/infra, IT support/technician). Any contest outside Espírito Santo (ES) or for NON-IT roles (general administration, high school/nível médio without IT focus, education, pedagogy, teaching, healthcare, medicine, nursing, engineering other than computer/software, agronomy) or generic institutional announcements/tests (like language proficiency exams) must NOT be categorized here and must receive relevance 1.
 - others: everything else (sports, weather, crime, lifestyle)."""
 
 BATCH_PROMPT = """You are an objective news editor for a Brazilian reader.
@@ -72,7 +72,11 @@ Theme definitions (follow strictly, the source hint can be wrong):
 
 Rules: be strictly factual, use only the given text, no opinions. If the text is only a title, keep the summary short.
 The reader does NOT want gossip: celebrity personal lives, relationships, influencers, reality shows (BBB, A Fazenda), telenovelas/soap operas and their actors, red carpets, "relembre" nostalgia pieces. Give any such article relevance 1 (it will be dropped), whatever its theme.
-Target for 'concursos': The reader is an IT Master's graduate located in Espírito Santo (ES). Keep ONLY opportunities in Espírito Santo (ES) for IT (Tecnologia da Informação) OR general high school level (nível médio). Give relevance 1 (to be dropped) to any contest/selection outside ES, OR requiring other non-IT degrees (pedagogy, teachers, medicine, nursing, agronomy), OR general institutional news that is not an active/upcoming hiring process or edital. Rate top IT contests/processes in ES (TJES, PRODEST, IFES, UFES, Banestes, city halls) with relevance 4 or 5.
+Target for 'concursos': The reader is an IT Master's graduate located in Espírito Santo (ES). Keep EXCLUSIVELY opportunities in Espírito Santo (ES) for Information Technology (TI/TIC: software developers, programmers, data analysts/engineers, IT infrastructure, network/database administration, IT support, systems analysis). Give relevance 1 (which DROPS the item entirely) to:
+  - ANY contest/selection outside Espírito Santo (ES);
+  - ANY contest without IT positions (e.g. general municipal education/pedagogy, general administration, general high school/nível médio, healthcare, civil/sanitary/environmental engineering, agriculture);
+  - Generic academic/institutional notices (e.g. language proficiency exams, university calendars).
+Rate legitimate IT contests/selection processes in ES (e.g., PRODEST, TJES TI, IFES TI, UFES TI, Banestes TI, city hall IT analyst/technician) with relevance 4 or 5.
 
 {articles}
 """
@@ -90,6 +94,62 @@ Comments:
 
 
 # ── Processing Helpers ───────────────────────────────────────────────────
+
+# Keywords that confirm an IT role in a 'concursos' item.
+# Short keywords use regex word boundaries (\b) to avoid false matches inside
+# longer Portuguese words (e.g. "seletivo" contains "ti", "tecnologia" has no "ti"
+# but we still guard against surprises).
+# Long unambiguous phrases use plain substring matching.
+import re as _re
+
+_IT_WORD_BOUNDARY_KWS = [
+    r"\bti\b", r"\btic\b", r"\bt\.i\.\b", r"\bt\.i\.c\.\b",
+    r"\binformática\b", r"\binformatica\b",
+    r"\bsoftware\b", r"\bhardware\b",
+    r"\bcloud\b",
+    r"\bcibersegurança\b", r"\bcybersecurity\b",
+    r"\bprodest\b",
+]
+
+_IT_PHRASE_KWS = [
+    "tecnologia da informação", "tecnologia de informação",
+    "ciência da computação", "ciencias da computacao", "ciência de computação",
+    "sistemas de informação",
+    "análise de sistemas", "analise de sistemas",
+    "engenharia de software",
+    "engenharia da computação", "engenharia de computação",
+    "desenvolvedor", "programador", "programação", "programacao",
+    "banco de dados", "database",
+    "infraestrutura de ti", "redes de computadores", "redes de dados",
+    "suporte técnico de ti", "suporte tecnico de ti", "suporte de ti",
+    "segurança da informação", "segurança cibernética",
+    "analista de sistemas",
+    "técnico de ti", "técnico em ti",
+    "técnico em informática", "tecnico em informatica",
+    "banestes ti",
+]
+
+_IT_WB_PATTERN = _re.compile("|".join(_IT_WORD_BOUNDARY_KWS), _re.IGNORECASE)
+
+
+def _is_it_concurso(item: dict) -> bool:
+    """Return True only if a 'concursos' item is clearly IT-related.
+
+    Acts as a deterministic safety net after LLM classification, preventing
+    non-IT contests from passing through when the LLM ignores the drop rule.
+    Uses word-boundary regex for short keywords and plain substring for phrases.
+    """
+    text = " ".join(filter(None, [
+        item.get("title", ""),
+        item.get("short_summary", ""),
+        item.get("article_summary", ""),
+        item.get("description", ""),
+    ])).lower()
+    if _IT_WB_PATTERN.search(text):
+        return True
+    return any(kw in text for kw in _IT_PHRASE_KWS)
+
+
 
 def _normalize_theme(raw_theme: str | None) -> str:
     if not raw_theme:
@@ -162,6 +222,15 @@ def process_items(items: list[dict], cfg: dict, router: LLMRouter) -> list[dict]
         comments_data = router.generate_json(_build_comments_prompt(item["comments"]))
         if comments_data and isinstance(comments_data.get("comments_summary"), str):
             item["comments_summary"] = comments_data["comments_summary"]
+
+    # Safety net: drop any 'concursos' item that contains no IT keywords,
+    # in case the LLM ignored the relevance-1 drop instruction.
+    for item in items:
+        if item.get("theme") == "concursos" and not _is_it_concurso(item):
+            logger.warning(
+                "  → [concursos guard] Non-IT item force-dropped: %s", item["title"][:80]
+            )
+            item["relevance"] = 1
 
     kept = [i for i in items if i["relevance"] >= col["min_relevance"]]
     logger.info("Kept %d/%d items (min_relevance=%d)", len(kept), len(items), col["min_relevance"])
