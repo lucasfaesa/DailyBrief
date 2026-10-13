@@ -114,6 +114,12 @@ rss_feeds:
   - { name: "G1 Economia",          url: "https://g1.globo.com/rss/g1/economia/",                   category_hint: economy }
   - { name: "InfoMoney",            url: "https://www.infomoney.com.br/feed/",                      category_hint: economy }
   - { name: "Folha Mercado",        url: "https://feeds.folha.uol.com.br/mercado/rss091.xml",       category_hint: economy }
+  # Concursos & Seleções (Espírito Santo: TI e Nível Médio)
+  - { name: "Folha Vitória Concursos", url: "https://www.folhavitoria.com.br/trabalho/concursos/feed/", category_hint: concursos, lookback_hours: 168 }
+  - { name: "Concursos no Brasil (ES)", url: "https://concursosnobrasil.com/concursos/es/feed/", category_hint: concursos, lookback_hours: 168 }
+  - { name: "TJES Notícias",           url: "https://www.tjes.jus.br/feed/",                   category_hint: concursos, lookback_hours: 168 }
+  - { name: "IFES Notícias",           url: "https://www.ifes.edu.br/noticias?format=feed&type=rss", category_hint: concursos, lookback_hours: 168 }
+  - { name: "UFES Notícias",           url: "https://www.ufes.br/rss.xml",                     category_hint: concursos, lookback_hours: 168 }
 
 # ── Text Extraction ──────────────────────────────────────────
 extraction:
@@ -154,6 +160,7 @@ themes:
   - anime
   - science
   - economy
+  - concursos
   - others
 
 # ── Site Config ──────────────────────────────────────────────

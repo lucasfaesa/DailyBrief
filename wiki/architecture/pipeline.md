@@ -41,8 +41,9 @@ Self-check: `python src/test_pipeline.py`.
 
 ## Supported Themes (`ALLOWED_THEMES`)
 
-`national_politics`, `international_politics`, `technology`, `ai`, `gaming`, `game_dev`, `custom_engines`, `anime`, `movies`, `crypto`, `science`, `economy`, `others`
+`national_politics`, `international_politics`, `technology`, `ai`, `concursos`, `gaming`, `game_dev`, `custom_engines`, `anime`, `movies`, `crypto`, `science`, `economy`, `others`
 
-`gaming` is the player's side (releases, reviews); `game_dev` is development and the industry as a business (layoffs, closures, funding, engines).
+- `concursos`: public contests (concursos públicos) and selective processes (PSS/DT) located in Espírito Santo (ES), filtered strictly for IT (TI/TIC) or general high school level (nível médio). Out-of-state contests and non-IT specific degree contests receive relevance 1 (dropped).
+- `gaming` is the player's side (releases, reviews); `game_dev` is development and the industry as a business (layoffs, closures, funding, engines).
 
 See related docs: [[architecture/llm]] and [[architecture/extract]].

@@ -37,7 +37,7 @@ Orchestrates feeds in order: Hacker News → Reddit → RSS, returning a dedupli
 ### RSS Feeds
 - Parsed using `feedparser.parse(url)`.
 - Applies source-level `category_hint` from `config.yaml`.
-- Optional per-feed `lookback_hours` overrides the global window (custom-engine blogs use 168h because they post rarely).
+- Optional per-feed `lookback_hours` overrides the global window (e.g. custom-engine blogs and Espírito Santo concursos feeds use 168h because new entries appear periodically).
 - Entry date: `published_parsed`, falling back to `updated_parsed` (Atom feeds often only have `<updated>`).
 - Comments are left empty for standard RSS articles.
 

@@ -25,6 +25,7 @@ ALLOWED_THEMES = [
     "crypto",
     "science",
     "economy",
+    "concursos",
     "others",
 ]
 
@@ -37,6 +38,7 @@ THEME_COMPAT = {
     "animes": "anime",
     "ciencia": "science",
     "economia": "economy",
+    "concursos_es": "concursos",
     "outros": "others",
 }
 
@@ -54,6 +56,7 @@ THEME_GUIDE = """- national_politics: ONLY Brazilian politics — federal/state 
 - crypto: cryptocurrencies, Bitcoin, Ethereum, blockchain, exchanges, stablecoins, crypto regulation and prices.
 - science: research, space, health studies, environment science.
 - economy: markets, inflation, interest rates, companies' finances, jobs, trade (crypto goes to crypto).
+- concursos: public contests (concursos públicos) and simplified selection processes / temporary contracts (processos seletivos simplificados / contratações temporárias / DT) strictly located in the state of Espírito Santo (ES), Brazil. MUST be specifically for Information Technology (TI/TIC, software, systems, infra, data, cybersecurity, support) OR general High School / technical level (nível médio / técnico / assistente administrativo). Any contest outside Espírito Santo (ES) or for other specific higher-education degrees (health, medicine, nursing, pedagogy, teachers, agronomy) or generic news that is not an active/upcoming hiring process or edital are NOT allowed here and must receive relevance 1.
 - others: everything else (sports, weather, crime, lifestyle)."""
 
 BATCH_PROMPT = """You are an objective news editor for a Brazilian reader.
@@ -69,6 +72,7 @@ Theme definitions (follow strictly, the source hint can be wrong):
 
 Rules: be strictly factual, use only the given text, no opinions. If the text is only a title, keep the summary short.
 The reader does NOT want gossip: celebrity personal lives, relationships, influencers, reality shows (BBB, A Fazenda), telenovelas/soap operas and their actors, red carpets, "relembre" nostalgia pieces. Give any such article relevance 1 (it will be dropped), whatever its theme.
+Target for 'concursos': The reader is an IT Master's graduate located in Espírito Santo (ES). Keep ONLY opportunities in Espírito Santo (ES) for IT (Tecnologia da Informação) OR general high school level (nível médio). Give relevance 1 (to be dropped) to any contest/selection outside ES, OR requiring other non-IT degrees (pedagogy, teachers, medicine, nursing, agronomy), OR general institutional news that is not an active/upcoming hiring process or edital. Rate top IT contests/processes in ES (TJES, PRODEST, IFES, UFES, Banestes, city halls) with relevance 4 or 5.
 
 {articles}
 """

@@ -13,6 +13,7 @@ const THEMES = {
   economy:                { label: 'Economia',          color: '#30a46c' },
   technology:             { label: 'Tecnologia',        color: '#8e7bff' },
   ai:                     { label: 'IA',                color: '#d864d8' },
+  concursos:              { label: 'Concursos ES',      color: '#00b4d8' },
   science:                { label: 'Ciência',           color: '#12a594' },
   gaming:                 { label: 'Games',             color: '#f76b15' },
   game_dev:               { label: 'Game Dev',          color: '#ffb224' },
@@ -27,7 +28,7 @@ const THEMES = {
 const THEME_COMPAT = {
   politica_nacional: 'national_politics', politica_internacional: 'international_politics',
   tecnologia: 'technology', ia: 'ai', games: 'gaming', animes: 'anime',
-  ciencia: 'science', economia: 'economy', outros: 'others',
+  ciencia: 'science', economia: 'economy', concursos_es: 'concursos', outros: 'others',
 };
 
 const HOME_PER_THEME = 4;
