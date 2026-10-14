@@ -24,6 +24,10 @@ from dataclasses import dataclass, field
 
 logger = logging.getLogger(__name__)
 
+# Circuit breaker: after this many consecutive "gave up" results, skip the provider for a while.
+COOLDOWN_AFTER_FAILS = 2
+COOLDOWN_SECONDS = 600
+
 
 # ── Statistics ────────────────────────────────────────────────────────────
 
@@ -123,6 +127,11 @@ class LLMRouter:
         self._exhausted: set[str] = set()
         self._providers = self._build_providers()
 
+        # Circuit breaker (temporary skip) and global time budget
+        self._fails: dict[str, int] = {}
+        self._cooldown_until: dict[str, float] = {}
+        self._deadline = time.monotonic() + float(os.environ.get("PIPELINE_BUDGET_SECONDS", "720"))
+
     def _build_providers(self) -> list:
         providers = []
         for p_cfg in self.cfg["providers"]:
@@ -140,12 +149,19 @@ class LLMRouter:
 
     def generate(self, prompt: str) -> str | None:
         """Invokes LLM with automated fallback. Returns text or None if all fail."""
+        if time.monotonic() > self._deadline:
+            logger.error("Time budget exceeded; skipping LLM call.")
+            self.stats.record_failure()
+            return None
+
         rate_pause = self.cfg["rate_limit_pause_seconds"]
         max_retries = self.cfg["max_retries_per_provider"]
         backoff_base = self.cfg["backoff_base_seconds"]
 
         for provider in self._providers:
             if provider.name in self._exhausted:
+                continue
+            if time.monotonic() < self._cooldown_until.get(provider.name, 0):
                 continue
 
             last_exc: Exception | None = None
@@ -158,6 +174,7 @@ class LLMRouter:
                     time.sleep(rate_pause)
                     result = provider.generate(prompt)
                     self.stats.record(provider.name)
+                    self._fails[provider.name] = 0
                     logger.debug("✓ [%s] resolved request (attempt %d)", provider.name, attempt + 1)
                     return result
                 except Exception as exc:
@@ -174,6 +191,12 @@ class LLMRouter:
                     self._exhausted.add(provider.name)
                 else:
                     logger.warning("↷ [%s] gave up on this request: %s", provider.name, last_exc)
+                    self._fails[provider.name] = self._fails.get(provider.name, 0) + 1
+                    if self._fails[provider.name] >= COOLDOWN_AFTER_FAILS:
+                        self._cooldown_until[provider.name] = time.monotonic() + COOLDOWN_SECONDS
+                        logger.warning(
+                            "⏸ [%s] cooling down for %d min.", provider.name, COOLDOWN_SECONDS // 60
+                        )
 
         self.stats.record_failure()
         logger.error("All LLM providers failed for this request.")
