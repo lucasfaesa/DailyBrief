@@ -131,7 +131,7 @@ llm:
   rate_limit_pause_seconds: 6     # Delay between LLM invocations (Gemini free tier ≈ 10 RPM)
   max_retries_per_provider: 3     # Attempts before switching providers
   json_fix_retries: 2             # Attempts to repair invalid JSON
-  backoff_base_seconds: 4         # Exponential backoff base in seconds
+  backoff_base_seconds: 2         # Exponential backoff base in seconds
 
   providers:
     - name: "gemini"
