@@ -31,6 +31,17 @@ assert [i["id"] for i in out] == ["a", "b"], out
 a, b = out
 assert a["theme"] == "national_politics" and a["article_summary"] == "long" and a["comments_summary"] == "c"
 assert b["theme"] == "anime" and b["relevance"] == 2 and "article_summary" not in b
+
+
+class DedupRouter:
+    def generate_json(self, prompt):
+        return {"groups": [["x", "y", "ghost"], "junk"]}
+
+
+dups = [{"id": "x", "title": "EN", "theme": "economy", "short_summary": "s", "relevance": 3},
+        {"id": "y", "title": "PT", "theme": "economy", "short_summary": "s", "relevance": 4},
+        {"id": "z", "title": "Z", "theme": "economy", "short_summary": "s", "relevance": 3}]
+assert [i["id"] for i in pipeline._drop_duplicates(dups, DedupRouter())] == ["y", "z"]
 assert _try_parse_json('```json\n{"items": []}\n```') == {"items": []}
 print("ok")
 

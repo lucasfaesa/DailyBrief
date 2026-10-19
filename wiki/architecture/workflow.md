@@ -8,9 +8,11 @@ updated_at: 2026-10-11
 
 ## Triggers
 
-- **Scheduled (Cron)**:
-  - `7 10 * * *` (07:07 America/Sao_Paulo / 10:07 UTC)
-  - `7 0 * * *` (21:07 America/Sao_Paulo / 00:07 UTC next day)
+- **Scheduled (external)**: cron-job.org job `7 7,21 * * *` (timezone America/Sao_Paulo) sends
+  `POST https://api.github.com/repos/lucasfaesa/DailyBrief/actions/workflows/daily.yml/dispatches`
+  with body `{"ref":"master"}` and a fine-grained PAT (Actions: read/write, this repo only) as `Authorization: Bearer`. Success = HTTP 204.
+  GitHub's native `schedule:` was dropped: it ran 3-7h late, pushing the night edition past midnight so the next morning's run overwrote its archive file.
+  When the PAT expires the runs silently stop — renew it in cron-job.org.
 - **Manual**: `workflow_dispatch` trigger via GitHub UI.
 
 ## Permissions
@@ -23,7 +25,7 @@ permissions:
 
 ## Concurrency
 
-`concurrency: daily-digest` (no cancel) queues a manual dispatch behind a running scheduled run, so the two never race on `git push`.
+`concurrency: daily-digest` (no cancel) queues a dispatch behind a running one, so the two never race on `git push`.
 
 ## Execution Steps
 

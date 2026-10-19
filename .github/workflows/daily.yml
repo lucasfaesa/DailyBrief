@@ -1,17 +1,14 @@
 name: Daily News Digest
 
+# GitHub's own `schedule:` ran 3-7h late on this repo; cron-job.org calls the
+# workflow_dispatch API at 07:07 and 21:07 America/Sao_Paulo instead (see wiki/architecture/workflow.md)
 on:
-  schedule:
-    # 07:07 America/Sao_Paulo = 10:07 UTC
-    - cron: "7 10 * * *"
-    # 21:07 America/Sao_Paulo = 00:07 UTC
-    - cron: "7 0 * * *"
   workflow_dispatch:
 
 permissions:
   contents: write
 
-# A manual dispatch during a scheduled run would race it on git push
+# A second dispatch during a running one would race it on git push
 concurrency:
   group: daily-digest
   cancel-in-progress: false

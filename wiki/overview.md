@@ -20,7 +20,7 @@ Runs entirely serverless within GitHub Actions without requiring any local hardw
 
 | Layer | Technology |
 |-------|------------|
-| CI/CD | GitHub Actions (cron + `workflow_dispatch`) |
+| CI/CD | GitHub Actions (`workflow_dispatch`, triggered by cron-job.org) |
 | Runtime | Python 3.11 |
 | Data Ingestion | `requests`, `feedparser` |
 | Text Extraction | `trafilatura` |
@@ -34,7 +34,7 @@ Runs entirely serverless within GitHub Actions without requiring any local hardw
 ## End-to-End Pipeline
 
 ```
-GitHub Actions (Cron at 10:00 & 23:00 UTC)
+GitHub Actions (cron-job.org dispatch at 07:07 & 21:07 BRT)
     │
     ├─ src/main.py
     │       ├─ collect_all()          ← src/collect.py

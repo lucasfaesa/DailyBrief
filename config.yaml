@@ -17,7 +17,7 @@ collection:
 hacker_news:
   enabled: true
   top_stories_limit: 20       # Top stories to inspect
-  max_comments: 30            # Maximum comments per post
+  max_comments: 5             # Comments per post (20 stories × 5 = 100 requests; each comment is one HTTP call)
 
 # ── Reddit ───────────────────────────────────────────────────
 reddit:

@@ -4,6 +4,7 @@ Returns a normalized list of item dictionaries deduplicated by URL.
 """
 from __future__ import annotations
 
+import calendar
 import hashlib
 import logging
 import time
@@ -146,7 +147,7 @@ def collect_reddit(cfg: dict) -> list[dict]:
         feed = feedparser.parse(rss_url, request_headers=headers)
 
         for entry in feed.entries[:limit_per]:
-            pub_ts = time.mktime(entry.published_parsed) if entry.get("published_parsed") else None
+            pub_ts = calendar.timegm(entry.published_parsed) if entry.get("published_parsed") else None
             if not _within(pub_ts, cutoff):
                 continue
 
@@ -218,7 +219,7 @@ def collect_rss(cfg: dict) -> list[dict]:
 
             # Atom feeds often carry only <updated>; without it, old posts slipped through as "no date"
             parsed = entry.get("published_parsed") or entry.get("updated_parsed")
-            pub_ts = time.mktime(parsed) if parsed else None
+            pub_ts = calendar.timegm(parsed) if parsed else None
             if not _within(pub_ts, cutoff):
                 continue
 

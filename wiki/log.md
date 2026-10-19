@@ -53,3 +53,7 @@ Translated all documentation, wiki pages, code docstrings/comments, pipeline pro
 ## [2026-10-12] fix | concursos: restricted prompt to strictly IT positions in ES, discarding general education, admin, healthcare, and proficiency exams (relevance 1)
 
 ## [2026-10-12] fix | concursos: added deterministic IT keyword guard (_is_it_concurso) to drop non-IT items that bypass LLM relevance-1 rule
+## [2026-10-19] feat | pipeline: LLM same-story dedup (_drop_duplicates) collapses cross-outlet and EN/PT duplicates
+## [2026-10-19] fix | collect: feed timestamps parsed with calendar.timegm (UTC) instead of time.mktime (local time)
+## [2026-10-19] config | hacker_news.max_comments 30 → 5 (≈100 comment requests per run instead of ≈600)
+## [2026-10-19] config | workflow: removed GitHub schedule (3-7h delays); runs now dispatched by cron-job.org at 07:07/21:07 BRT

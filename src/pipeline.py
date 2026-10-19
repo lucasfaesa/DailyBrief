@@ -93,6 +93,16 @@ Comments:
 """
 
 
+DEDUP_PROMPT = """You are a news editor removing duplicates from a news digest.
+Below is one line per article: id | theme | summary. Find articles that report the SAME specific story/event
+(same facts, possibly from different outlets or in different languages). Related-but-different stories
+(e.g. two different announcements by the same company) are NOT duplicates.
+Return ONLY a JSON object: {{"groups": [["id1", "id2", ...], ...]}} listing only groups with 2+ ids. Return {{"groups": []}} if none.
+
+{lines}
+"""
+
+
 # ── Processing Helpers ───────────────────────────────────────────────────
 
 # Keywords that confirm an IT role in a 'concursos' item.
@@ -189,12 +199,36 @@ def _apply_result(item: dict, res: dict | None) -> None:
         item["article_summary"] = res["summary"]
 
 
+def _drop_duplicates(items: list[dict], router: LLMRouter) -> list[dict]:
+    """Collapses same-story items from different outlets/languages (URL/title dedup misses those).
+
+    short_summary is always Portuguese, so comparing it catches EN/PT pairs too.
+    """
+    lines = "\n".join(f"{i['id']} | {i['theme']} | {i['short_summary']}" for i in items)
+    data = router.generate_json(DEDUP_PROMPT.format(lines=lines))
+    groups = data.get("groups") if isinstance(data, dict) else None
+    if not isinstance(groups, list):
+        logger.warning("Dedup skipped: no valid LLM answer")
+        return items
+    by_id = {i["id"]: i for i in items}
+    drop: set[str] = set()
+    for group in groups:
+        members = [by_id[g] for g in group if isinstance(g, str) and g in by_id] if isinstance(group, list) else []
+        # Keep the best-rated copy, preferring one with a full summary and reader comments
+        members.sort(key=lambda i: (i["relevance"], "article_summary" in i, len(i.get("comments") or [])), reverse=True)
+        for dup in members[1:]:
+            logger.info("  → Duplicate dropped: %s (kept: %s)", dup["title"][:60], members[0]["title"][:60])
+            drop.add(dup["id"])
+    return [i for i in items if i["id"] not in drop]
+
+
 def process_items(items: list[dict], cfg: dict, router: LLMRouter) -> list[dict]:
     """
     1. Extracts full text for every item
     2. Classifies + summarizes in batches (one LLM call per batch_size items)
     3. Summarizes comments for high-relevance items
     4. Drops items below min_relevance
+    5. Drops same-story duplicates (one LLM call)
     """
     col = cfg["collection"]
     batch_size: int = col["batch_size"]
@@ -234,5 +268,6 @@ def process_items(items: list[dict], cfg: dict, router: LLMRouter) -> list[dict]
 
     kept = [i for i in items if i["relevance"] >= col["min_relevance"]]
     logger.info("Kept %d/%d items (min_relevance=%d)", len(kept), len(items), col["min_relevance"])
+    kept = _drop_duplicates(kept, router)
     router.print_summary()
     return kept
