@@ -16,7 +16,7 @@ concurrency:
 jobs:
   digest:
     runs-on: ubuntu-latest
-    timeout-minutes: 35  # Reddit pacing (~1 min per subreddit) + 12 min LLM budget (PIPELINE_BUDGET_SECONDS)
+    timeout-minutes: 50  # Reddit pacing (~1 min per subreddit) + 12 min LLM budget (PIPELINE_BUDGET_SECONDS)
 
     steps:
       - name: Checkout repository
