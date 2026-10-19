@@ -12,12 +12,13 @@ collection:
   min_relevance: 2            # Items rated below this (trivial/clickbait) are dropped
   max_high_relevance: 15      # Maximum items that get a comments summary
   relevance_threshold: 4      # Minimum relevance score for a comments summary
+  max_items_per_theme: 20     # Best items kept per theme after classification (relevance, then newest)
 
 # ── Hacker News ──────────────────────────────────────────────
 hacker_news:
   enabled: true
   top_stories_limit: 20       # Top stories to inspect
-  max_comments: 5             # Comments per post (20 stories × 5 = 100 requests; each comment is one HTTP call)
+  max_comments: 10            # Comments per post (20 stories × 10 = 200 requests; each comment is one HTTP call)
 
 # ── Reddit ───────────────────────────────────────────────────
 reddit:

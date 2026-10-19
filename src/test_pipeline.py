@@ -20,7 +20,7 @@ class FakeRouter:
 
 
 cfg = {"collection": {"batch_size": 10, "batch_text_chars": 100, "min_relevance": 2,
-                      "relevance_threshold": 4, "max_high_relevance": 5}}
+                      "relevance_threshold": 4, "max_high_relevance": 5, "max_items_per_theme": 20}}
 items = [
     {"id": "a", "title": "A", "source": "s", "category_hint": "others", "comments": ["hi"]},
     {"id": "b", "title": "B", "source": "s", "category_hint": "anime", "comments": []},
@@ -42,6 +42,9 @@ dups = [{"id": "x", "title": "EN", "theme": "economy", "short_summary": "s", "re
         {"id": "y", "title": "PT", "theme": "economy", "short_summary": "s", "relevance": 4},
         {"id": "z", "title": "Z", "theme": "economy", "short_summary": "s", "relevance": 3}]
 assert [i["id"] for i in pipeline._drop_duplicates(dups, DedupRouter())] == ["y", "z"]
+capped = [{"id": n, "theme": "ai", "relevance": r, "published": p} for n, r, p in
+          [("old", 4, "2026-01-01"), ("low", 2, "2026-01-03"), ("new", 4, "2026-01-02"), ("top", 5, "2026-01-01")]]
+assert [i["id"] for i in pipeline._cap_per_theme(capped + [{"id": "g", "theme": "gaming", "relevance": 2}], 2)] == ["new", "top", "g"]
 assert _try_parse_json('```json\n{"items": []}\n```') == {"items": []}
 print("ok")
 
@@ -60,9 +63,8 @@ class Flaky:
         return '{"ok": 1}'
 
 
-r = llm.LLMRouter.__new__(llm.LLMRouter)
-r.cfg = {"rate_limit_pause_seconds": 0, "max_retries_per_provider": 2, "backoff_base_seconds": 2, "json_fix_retries": 0}
-r.stats, r._exhausted = llm.LLMStats(), set()
+r = llm.LLMRouter({"llm": {"providers": [], "rate_limit_pause_seconds": 0, "max_retries_per_provider": 2,
+                            "backoff_base_seconds": 2, "json_fix_retries": 0}})
 busy = llm.ProviderError(503, "high demand")
 r._providers = [Flaky("a", [busy, busy]), Flaky("b", [llm.ProviderError(404, "gone")])]
 assert r.generate_json("x") is None  # a: 503 twice, b: fatal

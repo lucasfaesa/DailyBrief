@@ -222,6 +222,19 @@ def _drop_duplicates(items: list[dict], router: LLMRouter) -> list[dict]:
     return [i for i in items if i["id"] not in drop]
 
 
+def _cap_per_theme(items: list[dict], cap: int) -> list[dict]:
+    """Keeps the `cap` best items of each theme: highest relevance first, newest breaks ties."""
+    ranked = sorted(items, key=lambda i: (i["relevance"], i.get("published") or ""), reverse=True)
+    per_theme: dict[str, int] = {}
+    kept_ids: set[str] = set()
+    for item in ranked:
+        if per_theme.get(item["theme"], 0) < cap:
+            per_theme[item["theme"]] = per_theme.get(item["theme"], 0) + 1
+            kept_ids.add(item["id"])
+    logger.info("Theme cap kept %d/%d items (max %d per theme)", len(kept_ids), len(items), cap)
+    return [i for i in items if i["id"] in kept_ids]
+
+
 def process_items(items: list[dict], cfg: dict, router: LLMRouter) -> list[dict]:
     """
     1. Extracts full text for every item
@@ -229,6 +242,7 @@ def process_items(items: list[dict], cfg: dict, router: LLMRouter) -> list[dict]
     3. Summarizes comments for high-relevance items
     4. Drops items below min_relevance
     5. Drops same-story duplicates (one LLM call)
+    6. Keeps at most max_items_per_theme per theme
     """
     col = cfg["collection"]
     batch_size: int = col["batch_size"]
@@ -269,5 +283,6 @@ def process_items(items: list[dict], cfg: dict, router: LLMRouter) -> list[dict]
     kept = [i for i in items if i["relevance"] >= col["min_relevance"]]
     logger.info("Kept %d/%d items (min_relevance=%d)", len(kept), len(items), col["min_relevance"])
     kept = _drop_duplicates(kept, router)
+    kept = _cap_per_theme(kept, col["max_items_per_theme"])
     router.print_summary()
     return kept
