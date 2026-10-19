@@ -58,3 +58,5 @@ Translated all documentation, wiki pages, code docstrings/comments, pipeline pro
 ## [2026-10-19] config | hacker_news.max_comments 30 → 5 (≈100 comment requests per run instead of ≈600)
 ## [2026-10-19] config | workflow: removed GitHub schedule (3-7h delays); runs now dispatched by cron-job.org at 07:07/21:07 BRT
 ## [2026-10-19] feat | pipeline: cap of max_items_per_theme (20) best items per theme; HN max_comments 5 → 10
+## [2026-10-19] feat | new steamdeck theme/tab (Valve Steam Deck news, Boiling Steam, GamingOnLinux feeds); SW cache v15
+## [2026-10-19] fix | reddit: pace on x-ratelimit headers (only r/worldnews was getting through), drop comment fetch, add r/SteamDeck, run alongside HN/RSS; job timeout 35 min

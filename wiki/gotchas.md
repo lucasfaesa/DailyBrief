@@ -39,9 +39,9 @@ In `src/main.py` (`build_output()`), raw comment strings are omitted before writ
 
 `collect_hn()` queries only root comment IDs under `data["kids"]` (depth 1). Nested replies are omitted.
 
-## 7. Reddit Comments Fail Silently
+## 7. Reddit Rate Limit (~1 request/min)
 
-The Reddit comment fetch block uses `try/except Exception: pass`. 429s or rate limit bans result in an empty comment array without raising an error.
+Unauthenticated Reddit allows about one request per minute per IP. `collect_reddit()` paces itself on the `x-ratelimit-*` headers, so every subreddit in `config.yaml` adds ~1 min to the run, and Reddit comments are not fetched. OAuth apps now need Reddit's approval.
 
 ## 8. Provider Circuit Breaker Is Per-Execution
 

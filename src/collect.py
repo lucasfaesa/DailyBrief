@@ -8,6 +8,7 @@ import calendar
 import hashlib
 import logging
 import time
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone, timedelta
 from typing import Any
 from urllib.parse import urlparse
@@ -127,13 +128,15 @@ def collect_hn(cfg: dict) -> list[dict]:
 
 # ── Reddit ─────────────────────────────────────────────────────────────────
 
-def collect_reddit(cfg: dict) -> list[dict]:
-    """Collects top posts via Reddit RSS and fetches top comments via .json endpoints."""
-    if not cfg["reddit"]["enabled"]:
-        return []
+def _reddit_wait(resp: requests.Response) -> None:
+    """Unauthenticated Reddit allows ~1 request/min; sleeping until the window resets beats a silent 429."""
+    if float(resp.headers.get("x-ratelimit-remaining", 1)) < 1:
+        time.sleep(float(resp.headers.get("x-ratelimit-reset", 60)) + 1)
 
+
+def collect_reddit(cfg: dict) -> list[dict]:
+    """Collects top posts via Reddit RSS, paced to the unauthenticated rate limit (no comments: each costs a minute)."""
     ua = cfg["reddit"]["user_agent"]
-    max_comments: int = cfg["reddit"]["max_comments"]
     limit_per: int = cfg["collection"]["max_items_per_source"]
     lookback: int = cfg["collection"]["lookback_hours"]
     cutoff = _cutoff(lookback)
@@ -144,7 +147,19 @@ def collect_reddit(cfg: dict) -> list[dict]:
     for sub_cfg in cfg["reddit"]["subreddits"]:
         sub = sub_cfg["name"]
         rss_url = f"https://www.reddit.com/r/{sub}/top/.rss?t=day&limit={limit_per}"
-        feed = feedparser.parse(rss_url, request_headers=headers)
+        try:
+            resp = requests.get(rss_url, headers=headers, timeout=15)
+        except requests.RequestException as exc:
+            logger.warning("Reddit r/%s failed: %s", sub, exc)
+            continue
+        if resp.status_code == 429:
+            _reddit_wait(resp)
+            resp = requests.get(rss_url, headers=headers, timeout=15)
+        _reddit_wait(resp)
+        if not resp.ok:
+            logger.warning("Reddit r/%s: HTTP %d", sub, resp.status_code)
+            continue
+        feed = feedparser.parse(resp.content)
 
         for entry in feed.entries[:limit_per]:
             pub_ts = calendar.timegm(entry.published_parsed) if entry.get("published_parsed") else None
@@ -157,34 +172,15 @@ def collect_reddit(cfg: dict) -> list[dict]:
                 continue
 
             published = datetime.fromtimestamp(pub_ts, tz=timezone.utc) if pub_ts else None
-
-            # Attempt fetching top comments via JSON
-            comments: list[str] = []
-            try:
-                json_url = link.rstrip("/") + ".json?limit=100&sort=top"
-                jr = _http_get(json_url, headers=headers, timeout=10)
-                if jr:
-                    jdata = jr.json()
-                    comment_listing = jdata[1]["data"]["children"] if len(jdata) > 1 else []
-                    for c in comment_listing[:max_comments]:
-                        body = c.get("data", {}).get("body", "")
-                        if body and body not in ("[deleted]", "[removed]"):
-                            comments.append(body.strip())
-            except Exception:
-                pass  # Comments are optional
-
             description = entry.get("summary", "")[:500]
             items.append(make_item(
                 url=link,
                 title=title,
                 source=f"Reddit /r/{sub}",
                 published=published,
-                comments=comments,
                 description=description,
                 category_hint=sub_cfg.get("category_hint", "others"),
             ))
-
-        time.sleep(0.5)  # Respect Reddit rate limit
 
     logger.info("Reddit: collected %d items", len(items))
     return items
@@ -268,12 +264,16 @@ def collect_all(cfg: dict) -> list[dict]:
     """Collects news across all configured sources."""
     all_items: list[dict] = []
 
-    if cfg["hacker_news"]["enabled"]:
-        all_items.extend(collect_hn(cfg))
+    # Reddit spends most of its time sleeping on the rate limit, so it runs alongside HN/RSS
+    with ThreadPoolExecutor(max_workers=1) as pool:
+        reddit = pool.submit(collect_reddit, cfg) if cfg["reddit"]["enabled"] else None
 
-    if cfg["reddit"]["enabled"]:
-        all_items.extend(collect_reddit(cfg))
+        if cfg["hacker_news"]["enabled"]:
+            all_items.extend(collect_hn(cfg))
 
-    all_items.extend(collect_rss(cfg))
+        if reddit:
+            all_items.extend(reddit.result())
+
+        all_items.extend(collect_rss(cfg))
 
     return deduplicate(all_items)

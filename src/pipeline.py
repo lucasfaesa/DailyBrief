@@ -18,6 +18,7 @@ ALLOWED_THEMES = [
     "technology",
     "ai",
     "gaming",
+    "steamdeck",
     "game_dev",
     "custom_engines",
     "anime",
@@ -49,6 +50,7 @@ THEME_GUIDE = """- national_politics: ONLY Brazilian politics — federal/state 
 - technology: software, hardware, internet, gadgets, programming, tech companies.
 - ai: artificial intelligence, machine learning, LLMs.
 - gaming: video games from the player's side — releases, reviews, trailers, updates, consoles.
+- steamdeck: Valve's Steam Deck and its ecosystem — Steam Deck hardware/OLED/successors, SteamOS updates, Proton/Linux gaming compatibility, Deck Verified ratings, games running on the Deck, handheld PC comparisons with the Steam Deck. Generic Steam client updates without Deck/SteamOS changes are NOT steamdeck (relevance 1-2).
 - game_dev: game development and the game industry as a business — studio layoffs, closures, hiring, growth, funding, acquisitions, revenue, engines (Unity, Unreal, Godot), dev tools, postmortems, developer working conditions.
 - custom_engines: building game/graphics engines from scratch — rendering and graphics programming, engine architecture, low-level performance, GPU APIs (Vulkan, DirectX, Metal), open-source engines like Bevy, Stride, Flax, O3DE. Unity/Unreal/Godot product news stays in game_dev.
 - anime: anime, manga, Japanese animation and pop culture.

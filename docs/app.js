@@ -16,6 +16,7 @@ const THEMES = {
   concursos:              { label: 'Concursos ES',      color: '#00b4d8' },
   science:                { label: 'Ciência',           color: '#12a594' },
   gaming:                 { label: 'Games',             color: '#f76b15' },
+  steamdeck:              { label: 'Steam Deck',        color: '#1a9fff' },
   game_dev:               { label: 'Game Dev',          color: '#ffb224' },
   custom_engines:         { label: 'Custom Engines',    color: '#0090ff' },
   anime:                  { label: 'Animes',            color: '#ff5d8f' },

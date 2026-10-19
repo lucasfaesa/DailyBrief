@@ -24,7 +24,7 @@ hacker_news:
 reddit:
   enabled: true
   user_agent: "DailyBrief/1.0 (automated news digest; contact via GitHub)"
-  max_comments: 30
+  # Unauthenticated Reddit allows ~1 request/min: each subreddit adds ~1 min to the run (it overlaps HN/RSS collection)
   subreddits:
     - { name: worldnews,   category_hint: international_politics }
     - { name: brasil,      category_hint: others }
@@ -38,6 +38,7 @@ reddit:
     - { name: movies,      category_hint: movies }
     - { name: CryptoCurrency, category_hint: crypto }
     - { name: gaming,      category_hint: gaming }
+    - { name: SteamDeck,   category_hint: steamdeck }
     - { name: anime,       category_hint: anime }
     - { name: science,     category_hint: science }
 
@@ -73,6 +74,10 @@ rss_feeds:
   - { name: "IGN",                  url: "https://feeds.feedburner.com/ign/all",                    category_hint: gaming }
   - { name: "PC Gamer",             url: "https://www.pcgamer.com/rss/",                            category_hint: gaming }
   - { name: "Eurogamer",            url: "https://www.eurogamer.net/feed",                          category_hint: gaming }
+  # Steam Deck
+  - { name: "Steam Deck (Valve)",   url: "https://store.steampowered.com/feeds/news/app/1675200/",  category_hint: steamdeck }
+  - { name: "Boiling Steam",        url: "https://boilingsteam.com/feed/",                          category_hint: steamdeck }
+  - { name: "GamingOnLinux",        url: "https://www.gamingonlinux.com/article_rss.php",           category_hint: steamdeck }
   # Game development & industry
   - { name: "Game Developer",       url: "https://www.gamedeveloper.com/rss.xml",                   category_hint: game_dev }
   - { name: "GamesIndustry.biz",    url: "https://www.gamesindustry.biz/rss/gamesindustry_news_feed.rss", category_hint: game_dev }

@@ -29,9 +29,9 @@ Orchestrates feeds in order: Hacker News → Reddit → RSS, returning a dedupli
 
 ### Reddit
 - Endpoint: `https://www.reddit.com/r/{sub}/top/.rss?t=day&limit={N}`
-- Parsed via `feedparser` with customized `User-Agent`.
-- Comments: Fetches `{permalink}.json?limit=100&sort=top` with graceful error handling (`except Exception: pass`).
-- Throttles requests with a 500ms delay between subreddits.
+- Fetched with `requests` (custom `User-Agent`), parsed via `feedparser`.
+- Unauthenticated Reddit allows ~1 request/min per IP. `_reddit_wait()` sleeps until `x-ratelimit-reset` whenever `x-ratelimit-remaining` hits 0, and a 429 is retried once after that wait. Each subreddit therefore costs ~1 min; `collect_all()` runs Reddit in a background thread alongside HN and RSS.
+- No comments: each comment fetch would cost another minute of rate limit. (Before 2026-10-19 only the first subreddit ever got through; the rest got silent 429s.)
 - Category hint per subreddit via `category_hint` in `config.yaml` (default `others`).
 
 ### RSS Feeds
