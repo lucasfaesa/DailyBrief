@@ -20,13 +20,16 @@ const THEMES = {
   game_dev:               { label: 'Game Dev',          color: '#ffb224' },
   custom_engines:         { label: 'Custom Engines',    color: '#0090ff' },
   anime:                  { label: 'Animes',            color: '#ff5d8f' },
+  martial_arts:           { label: 'Judô & Jiu-Jitsu',  color: '#c2410c' },
   movies:                 { label: 'Filmes & Séries',   color: '#e54666' },
   crypto:                 { label: 'Cripto',            color: '#f7931a' },
   others:                 { label: 'Geral',             color: '#8b8d98' },
 };
 
-// Archives generated before the English refactor use Portuguese keys
+// Archives generated before the English refactor use Portuguese keys;
+// judo and bjj are separate pipeline themes (capped 10 each) sharing one tab
 const THEME_COMPAT = {
+  judo: 'martial_arts', bjj: 'martial_arts',
   politica_nacional: 'national_politics', politica_internacional: 'international_politics',
   tecnologia: 'technology', ia: 'ai', games: 'gaming', animes: 'anime',
   ciencia: 'science', economia: 'economy', concursos_es: 'concursos', outros: 'others',

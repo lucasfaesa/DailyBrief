@@ -24,7 +24,8 @@ def extract_text(item: dict[str, Any], cfg: dict) -> str:
     url: str = item["url"]
 
     # Heuristic: Discussion aggregator URLs have no article content to scrape
-    skip_domains = {"reddit.com", "news.ycombinator.com", "redd.it"}
+    # Google News links land on a JS redirect page, not the article
+    skip_domains = {"reddit.com", "news.ycombinator.com", "redd.it", "news.google.com"}
     domain = urlparse(url).netloc.lstrip("www.")
 
     text: str | None = None

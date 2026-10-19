@@ -13,6 +13,9 @@ collection:
   max_high_relevance: 15      # Maximum items that get a comments summary
   relevance_threshold: 4      # Minimum relevance score for a comments summary
   max_items_per_theme: 20     # Best items kept per theme after classification (relevance, then newest)
+  theme_caps:                 # Per-theme override of max_items_per_theme
+    judo: 10                  # judo + bjj share the "Judô & Jiu-Jitsu" tab 50/50 (BJJ news would crowd judo out)
+    bjj: 10
 
 # ── Hacker News ──────────────────────────────────────────────
 hacker_news:
@@ -78,6 +81,15 @@ rss_feeds:
   - { name: "Steam Deck (Valve)",   url: "https://store.steampowered.com/feeds/news/app/1675200/",  category_hint: steamdeck }
   - { name: "Boiling Steam",        url: "https://boilingsteam.com/feed/",                          category_hint: steamdeck }
   - { name: "GamingOnLinux",        url: "https://www.gamingonlinux.com/article_rss.php",           category_hint: steamdeck }
+  # Judo & BJJ (Google News search feeds: no key, links fall back to title + description)
+  - { name: "ge Judô",              url: "https://ge.globo.com/rss/ge/judo/",                       category_hint: judo, lookback_hours: 168 }
+  - { name: "Google News Judô",     url: "https://news.google.com/rss/search?hl=pt-BR&gl=BR&ceid=BR:pt-419&q=jud%C3%B4+when:1d",  category_hint: judo }
+  - { name: "Google News Judo",     url: "https://news.google.com/rss/search?hl=en-US&gl=US&ceid=US:en&q=judo+when:1d",     category_hint: judo }
+  - { name: "Google News Judô ES",  url: "https://news.google.com/rss/search?hl=pt-BR&gl=BR&ceid=BR:pt-419&q=jud%C3%B4+%22Esp%C3%ADrito+Santo%22+when:7d", category_hint: judo, lookback_hours: 168 }
+  - { name: "BJJEE",                url: "https://www.bjjee.com/feed/",                             category_hint: bjj }
+  - { name: "Graciemag",            url: "https://www.graciemag.com/feed/",                         category_hint: bjj, lookback_hours: 168 }
+  - { name: "Google News Jiu-Jitsu", url: "https://news.google.com/rss/search?hl=pt-BR&gl=BR&ceid=BR:pt-419&q=jiu-jitsu+when:1d", category_hint: bjj }
+  - { name: "Google News Jiu-Jitsu ES", url: "https://news.google.com/rss/search?hl=pt-BR&gl=BR&ceid=BR:pt-419&q=jiu-jitsu+%22Esp%C3%ADrito+Santo%22+when:7d", category_hint: bjj, lookback_hours: 168 }
   # Game development & industry
   - { name: "Game Developer",       url: "https://www.gamedeveloper.com/rss.xml",                   category_hint: game_dev }
   - { name: "GamesIndustry.biz",    url: "https://www.gamesindustry.biz/rss/gamesindustry_news_feed.rss", category_hint: game_dev }

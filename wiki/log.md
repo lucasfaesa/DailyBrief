@@ -60,3 +60,4 @@ Translated all documentation, wiki pages, code docstrings/comments, pipeline pro
 ## [2026-10-19] feat | pipeline: cap of max_items_per_theme (20) best items per theme; HN max_comments 5 → 10
 ## [2026-10-19] feat | new steamdeck theme/tab (Valve Steam Deck news, Boiling Steam, GamingOnLinux feeds); SW cache v15
 ## [2026-10-19] fix | reddit: pace on x-ratelimit headers (only r/worldnews was getting through), drop comment fetch, add r/SteamDeck, run alongside HN/RSS; job timeout 35 min
+## [2026-10-19] feat | judo + bjj themes (10 each via theme_caps) in one "Judô & Jiu-Jitsu" tab, ES events boosted; Google News RSS feeds, news.google.com skipped by extractor; SW cache v16

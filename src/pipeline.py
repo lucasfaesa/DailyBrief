@@ -22,6 +22,8 @@ ALLOWED_THEMES = [
     "game_dev",
     "custom_engines",
     "anime",
+    "judo",
+    "bjj",
     "movies",
     "crypto",
     "science",
@@ -53,6 +55,8 @@ THEME_GUIDE = """- national_politics: ONLY Brazilian politics — federal/state 
 - steamdeck: Valve's Steam Deck and its ecosystem — Steam Deck hardware/OLED/successors, SteamOS updates, Proton/Linux gaming compatibility, Deck Verified ratings, games running on the Deck, handheld PC comparisons with the Steam Deck. Generic Steam client updates without Deck/SteamOS changes are NOT steamdeck (relevance 1-2).
 - game_dev: game development and the game industry as a business — studio layoffs, closures, hiring, growth, funding, acquisitions, revenue, engines (Unity, Unreal, Godot), dev tools, postmortems, developer working conditions.
 - custom_engines: building game/graphics engines from scratch — rendering and graphics programming, engine architecture, low-level performance, GPU APIs (Vulkan, DirectX, Metal), open-source engines like Bevy, Stride, Flax, O3DE. Unity/Unreal/Godot product news stays in game_dev.
+- judo: judo — competitions (IJF World Tour, Grand Slams, Olympics, Brazilian/state championships), athletes, rankings, federations (CBJ, FEJUES), judo clubs and events.
+- bjj: Brazilian jiu-jitsu and submission grappling — competitions (IBJJF, CBJJ, ADCC, Copa Pódio, superfights), athletes, academies/teams, rules. Pure MMA/UFC news goes to others unless it is about jiu-jitsu itself.
 - anime: anime, manga, Japanese animation and pop culture.
 - movies: films, TV series and streaming — releases, trailers, reviews, box office, studios, festivals, awards. Anime goes to anime; telenovelas and celebrity gossip are not movies.
 - crypto: cryptocurrencies, Bitcoin, Ethereum, blockchain, exchanges, stablecoins, crypto regulation and prices.
@@ -78,6 +82,7 @@ Target for 'concursos': The reader is an IT Master's graduate located in Espíri
   - ANY contest/selection outside Espírito Santo (ES);
   - ANY contest without IT positions (e.g. general municipal education/pedagogy, general administration, general high school/nível médio, healthcare, civil/sanitary/environmental engineering, agriculture);
   - Generic academic/institutional notices (e.g. language proficiency exams, university calendars).
+For 'judo' and 'bjj': the reader trains in Espírito Santo (ES), Brazil. Rate championships, events and athletes from ES (Vitória, Vila Velha, Serra, Cariacica, etc.) with relevance 4 or 5. Small municipal events from other states are relevance 2 at most; international and Brazilian national-level results keep normal relevance.
 Rate legitimate IT contests/selection processes in ES (e.g., PRODEST, TJES TI, IFES TI, UFES TI, Banestes TI, city hall IT analyst/technician) with relevance 4 or 5.
 
 {articles}
@@ -224,13 +229,13 @@ def _drop_duplicates(items: list[dict], router: LLMRouter) -> list[dict]:
     return [i for i in items if i["id"] not in drop]
 
 
-def _cap_per_theme(items: list[dict], cap: int) -> list[dict]:
-    """Keeps the `cap` best items of each theme: highest relevance first, newest breaks ties."""
+def _cap_per_theme(items: list[dict], cap: int, overrides: dict[str, int]) -> list[dict]:
+    """Keeps the `cap` best items of each theme (or its override): highest relevance first, newest breaks ties."""
     ranked = sorted(items, key=lambda i: (i["relevance"], i.get("published") or ""), reverse=True)
     per_theme: dict[str, int] = {}
     kept_ids: set[str] = set()
     for item in ranked:
-        if per_theme.get(item["theme"], 0) < cap:
+        if per_theme.get(item["theme"], 0) < overrides.get(item["theme"], cap):
             per_theme[item["theme"]] = per_theme.get(item["theme"], 0) + 1
             kept_ids.add(item["id"])
     logger.info("Theme cap kept %d/%d items (max %d per theme)", len(kept_ids), len(items), cap)
@@ -244,7 +249,7 @@ def process_items(items: list[dict], cfg: dict, router: LLMRouter) -> list[dict]
     3. Summarizes comments for high-relevance items
     4. Drops items below min_relevance
     5. Drops same-story duplicates (one LLM call)
-    6. Keeps at most max_items_per_theme per theme
+    6. Keeps at most max_items_per_theme per theme (theme_caps overrides it per theme)
     """
     col = cfg["collection"]
     batch_size: int = col["batch_size"]
@@ -285,6 +290,6 @@ def process_items(items: list[dict], cfg: dict, router: LLMRouter) -> list[dict]
     kept = [i for i in items if i["relevance"] >= col["min_relevance"]]
     logger.info("Kept %d/%d items (min_relevance=%d)", len(kept), len(items), col["min_relevance"])
     kept = _drop_duplicates(kept, router)
-    kept = _cap_per_theme(kept, col["max_items_per_theme"])
+    kept = _cap_per_theme(kept, col["max_items_per_theme"], col.get("theme_caps") or {})
     router.print_summary()
     return kept

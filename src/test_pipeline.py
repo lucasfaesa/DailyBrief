@@ -44,7 +44,8 @@ dups = [{"id": "x", "title": "EN", "theme": "economy", "short_summary": "s", "re
 assert [i["id"] for i in pipeline._drop_duplicates(dups, DedupRouter())] == ["y", "z"]
 capped = [{"id": n, "theme": "ai", "relevance": r, "published": p} for n, r, p in
           [("old", 4, "2026-01-01"), ("low", 2, "2026-01-03"), ("new", 4, "2026-01-02"), ("top", 5, "2026-01-01")]]
-assert [i["id"] for i in pipeline._cap_per_theme(capped + [{"id": "g", "theme": "gaming", "relevance": 2}], 2)] == ["new", "top", "g"]
+assert [i["id"] for i in pipeline._cap_per_theme(capped + [{"id": "g", "theme": "gaming", "relevance": 2}], 2, {})] == ["new", "top", "g"]
+assert [i["id"] for i in pipeline._cap_per_theme(capped, 2, {"ai": 1})] == ["top"]
 assert _try_parse_json('```json\n{"items": []}\n```') == {"items": []}
 print("ok")
 
