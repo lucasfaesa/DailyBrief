@@ -42,6 +42,9 @@ reddit:
     - { name: CryptoCurrency, category_hint: crypto }
     - { name: gaming,      category_hint: gaming }
     - { name: SteamDeck,   category_hint: steamdeck }
+    - { name: judo,        category_hint: judo }
+    - { name: WrestleJudoJitsu, category_hint: bjj }
+    - { name: bjj,         category_hint: bjj }
     - { name: anime,       category_hint: anime }
     - { name: science,     category_hint: science }
 
