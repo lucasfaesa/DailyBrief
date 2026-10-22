@@ -63,3 +63,6 @@ Translated all documentation, wiki pages, code docstrings/comments, pipeline pro
 ## [2026-10-19] feat | judo + bjj themes (10 each via theme_caps) in one "Judô & Jiu-Jitsu" tab, ES events boosted; Google News RSS feeds, news.google.com skipped by extractor; SW cache v16
 ## [2026-10-19] config | reddit: added r/judo, r/WrestleJudoJitsu and r/bjj (+~3 min per run)
 ## [2026-10-19] config | workflow timeout 35 → 50 min (18 subreddits ≈ 18 min of Reddit pacing)
+## [2026-10-22] feat | site chrome translated to English (summaries/news stay pt-BR); national/international politics tabs moved last before Favorites
+## [2026-10-22] fix | judo/bjj prompt: ES boost now only for upcoming-championship announcements, not results recaps or kids/youth news; reddit low-effort posts (memes, "does your X do this?") forced to relevance 1-2
+## [2026-10-22] feat | inline video on the item's own video (og:video sniff on article pages; v.redd.it/YouTube/Vimeo on Reddit via its JSON listing, same request cost); detail view renders <video>/<iframe>

@@ -28,11 +28,12 @@ Orchestrates feeds in order: Hacker News → Reddit → RSS, returning a dedupli
 - Strips HTML tags via regex. Category hint defaults to `technology`.
 
 ### Reddit
-- Endpoint: `https://www.reddit.com/r/{sub}/top/.rss?t=day&limit={N}`
-- Fetched with `requests` (custom `User-Agent`), parsed via `feedparser`.
+- Endpoint: `https://www.reddit.com/r/{sub}/top/.json?t=day&limit={N}` (JSON listing, not RSS — same one request per subreddit, but carries native video fields RSS doesn't expose).
+- Fetched with `requests` (custom `User-Agent`).
 - Unauthenticated Reddit allows ~1 request/min per IP. `_reddit_wait()` sleeps until `x-ratelimit-reset` whenever `x-ratelimit-remaining` hits 0, and a 429 is retried once after that wait. Each subreddit therefore costs ~1 min; `collect_all()` runs Reddit in a background thread alongside HN and RSS.
 - No comments: each comment fetch would cost another minute of rate limit. (Before 2026-10-19 only the first subreddit ever got through; the rest got silent 429s.)
 - Category hint per subreddit via `category_hint` in `config.yaml` (default `others`).
+- `_reddit_video()`: sets `item["video"]` only for the post's own video — a self-hosted `v.redd.it` clip (`is_video` + `media.reddit_video.fallback_url`, video-only, no audio track) or a `post_hint: "rich:video"` link post pointing straight at YouTube/Vimeo (converted to an embed URL). Everything else (image/gallery/self/link-to-article posts) gets `video: null`.
 
 ### RSS Feeds
 - Parsed using `feedparser.parse(url)`.

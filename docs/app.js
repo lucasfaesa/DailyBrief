@@ -8,22 +8,22 @@
 
 // Order here = tab order
 const THEMES = {
-  national_politics:      { label: 'Política Nacional', color: '#e5484d' },
-  international_politics: { label: 'Mundo',             color: '#3e9bff' },
-  economy:                { label: 'Economia',          color: '#30a46c' },
-  technology:             { label: 'Tecnologia',        color: '#8e7bff' },
-  ai:                     { label: 'IA',                color: '#d864d8' },
-  concursos:              { label: 'Concursos ES',      color: '#00b4d8' },
-  science:                { label: 'Ciência',           color: '#12a594' },
+  economy:                { label: 'Economy',           color: '#30a46c' },
+  technology:             { label: 'Technology',        color: '#8e7bff' },
+  ai:                     { label: 'AI',                color: '#d864d8' },
+  concursos:              { label: 'Public Exams (ES)', color: '#00b4d8' },
+  science:                { label: 'Science',           color: '#12a594' },
   gaming:                 { label: 'Games',             color: '#f76b15' },
   steamdeck:              { label: 'Steam Deck',        color: '#1a9fff' },
   game_dev:               { label: 'Game Dev',          color: '#ffb224' },
   custom_engines:         { label: 'Custom Engines',    color: '#0090ff' },
-  anime:                  { label: 'Animes',            color: '#ff5d8f' },
-  martial_arts:           { label: 'Judô & Jiu-Jitsu',  color: '#c2410c' },
-  movies:                 { label: 'Filmes & Séries',   color: '#e54666' },
-  crypto:                 { label: 'Cripto',            color: '#f7931a' },
-  others:                 { label: 'Geral',             color: '#8b8d98' },
+  anime:                  { label: 'Anime',             color: '#ff5d8f' },
+  martial_arts:           { label: 'Judo & Jiu-Jitsu',  color: '#c2410c' },
+  movies:                 { label: 'Movies & TV',       color: '#e54666' },
+  crypto:                 { label: 'Crypto',            color: '#f7931a' },
+  others:                 { label: 'General',           color: '#8b8d98' },
+  national_politics:      { label: 'National Politics', color: '#e5484d' },
+  international_politics: { label: 'World',             color: '#3e9bff' },
 };
 
 // Archives generated before the English refactor use Portuguese keys;
@@ -94,14 +94,14 @@ function showOnly(...toShow) {
 function formatDate(iso, opts = { dateStyle: 'long', timeStyle: 'short' }) {
   if (!iso) return '';
   try {
-    return new Intl.DateTimeFormat('pt-BR', { ...opts, timeZone: 'America/Sao_Paulo' }).format(new Date(iso));
+    return new Intl.DateTimeFormat('en-US', { ...opts, timeZone: 'America/Sao_Paulo' }).format(new Date(iso));
   } catch { return iso; }
 }
 
 function timeAgo(iso) {
   const h = Math.round((Date.now() - new Date(iso)) / 36e5);
   if (!iso || isNaN(h)) return '';
-  return h < 1 ? 'agora' : h < 24 ? `há ${h}h` : `há ${Math.round(h / 24)}d`;
+  return h < 1 ? 'now' : h < 24 ? `${h}h ago` : `${Math.round(h / 24)}d ago`;
 }
 
 function escHtml(str = '') {
@@ -120,6 +120,14 @@ const relOf = item => item.relevance || item.relevancia || 0;
 const shortOf = item => item.short_summary || item.resumo_curto;
 const longOf = item => item.article_summary || item.resumo_materia;
 const commentsOf = item => item.comments_summary || item.resumo_comentarios;
+
+function videoBlock(video) {
+  if (!video?.url) return '';
+  return video.type === 'video'
+    ? `<video class="detail-video" controls preload="metadata" src="${escHtml(video.url)}"></video>`
+    : `<iframe class="detail-video" src="${escHtml(video.url)}" loading="lazy"
+        allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
+}
 
 // ── Data Fetching ───────────────────────────────────────────────
 
@@ -145,7 +153,7 @@ async function loadData(path = 'data.json') {
     selectTheme('all');
   } catch (err) {
     console.error(err);
-    els.errorMsg.textContent = 'Não foi possível carregar as notícias. Verifique sua conexão.';
+    els.errorMsg.textContent = 'Could not load the news. Check your connection.';
     showOnly(els.error);
   }
 }
@@ -153,9 +161,9 @@ async function loadData(path = 'data.json') {
 // ── Home ────────────────────────────────────────────────────────
 
 function renderTabs() {
-  const tabs = [['all', 'Destaques', _data.all_items?.length || 0],
+  const tabs = [['all', 'Highlights', _data.all_items?.length || 0],
     ...Object.entries(THEMES).map(([k, t]) => [k, t.label, _byTheme[k].length]),
-    ['favorites', '★ Favoritos', _favs.length]];
+    ['favorites', '★ Favorites', _favs.length]];
   els.tabs.innerHTML = tabs.map(([key, label, n]) => `
     <button class="tab-btn${key === _activeTheme ? ' active' : ''}" role="tab" data-theme="${key}"
             style="--c:${THEMES[key]?.color || 'var(--accent)'}">
@@ -196,17 +204,17 @@ function renderHome() {
           <h2 class="section-title"><span>${t.label}</span></h2>
           <div class="card-list">${items.slice(0, HOME_PER_THEME).map(i => card(i)).join('')}</div>
           ${items.length > HOME_PER_THEME
-            ? `<button class="btn-more" data-theme="${key}">Ver todas as ${_byTheme[key].length} de ${t.label} →</button>` : ''}
+            ? `<button class="btn-more" data-theme="${key}">See all ${_byTheme[key].length} ${t.label} →</button>` : ''}
         </section>`;
     }
     els.home.innerHTML = html || empty();
   } else if (_activeTheme === 'favorites') {
     els.home.innerHTML = `
       <section class="theme-section" style="--c:var(--accent)">
-        <h2 class="page-title">Favoritos</h2>
+        <h2 class="page-title">Favorites</h2>
         ${_favs.length
           ? `<div class="card-list">${_favs.map(i => card(i)).join('')}</div>`
-          : '<p class="empty">Nenhum favorito ainda. Abra uma matéria e toque em ☆ Favoritar.</p>'}
+          : '<p class="empty">No favorites yet. Open an article and tap ☆ Favorite.</p>'}
       </section>`;
   } else {
     const t = THEMES[_activeTheme];
@@ -263,7 +271,7 @@ window.addEventListener('scroll', () => {
 }, { passive: true });
 
 function empty() {
-  return '<p class="empty">Nenhuma notícia neste tema hoje.</p>';
+  return '<p class="empty">No news in this category today.</p>';
 }
 
 function card(item, variant = '') {
@@ -280,9 +288,9 @@ function card(item, variant = '') {
       <span class="card-meta">
         <span>${escHtml(item.source)}</span>
         ${item.published ? `<span>· ${timeAgo(item.published)}</span>` : ''}
-        ${last ? '<span class="read-tag">Última aberta</span>' : read ? '<span class="read-tag">✓ Lida</span>' : ''}
-        ${isFav(item.id) ? '<span class="fav-tag" aria-label="Favorito">★</span>' : ''}
-        ${relOf(item) >= 4 ? '<span class="badge">Importante</span>' : ''}
+        ${last ? '<span class="read-tag">Last opened</span>' : read ? '<span class="read-tag">✓ Read</span>' : ''}
+        ${isFav(item.id) ? '<span class="fav-tag" aria-label="Favorite">★</span>' : ''}
+        ${relOf(item) >= 4 ? '<span class="badge">Important</span>' : ''}
       </span>
     </button>`;
 }
@@ -303,27 +311,28 @@ function renderDetail(id) {
     <h1 class="detail-title">${escHtml(item.title)}</h1>
     <p class="detail-meta">${escHtml(item.source)}${item.published ? ` · ${formatDate(item.published)}` : ''}</p>
     <button id="btn-fav" class="btn-fav"></button>
+    ${videoBlock(item.video)}
 
     <section class="detail-section ai">
-      <h3>Resumo por IA</h3>
+      <h3>AI Summary</h3>
       ${summary
         ? `<p>${escHtml(summary)}</p>`
-        : '<p class="muted">Resumo indisponível para esta matéria (a IA não processou esta edição).</p>'}
+        : '<p class="muted">Summary unavailable for this article (the AI did not process this edition).</p>'}
     </section>
 
     ${comments ? `
       <section class="detail-section">
-        <h3>O que a comunidade diz</h3>
+        <h3>What the community says</h3>
         <p>${escHtml(comments)}</p>
-        <p class="muted small">Sintetizado de comentários de usuários — opiniões, não fatos verificados.</p>
+        <p class="muted small">Synthesized from user comments — opinions, not verified facts.</p>
       </section>` : ''}
 
-    <a class="btn-primary" href="${escHtml(item.url)}" target="_blank" rel="noopener noreferrer">Ler matéria original ↗</a>
+    <a class="btn-primary" href="${escHtml(item.url)}" target="_blank" rel="noopener noreferrer">Read original article ↗</a>
   `;
   const favBtn = $('btn-fav');
   const paintFav = () => {
     const on = isFav(item.id);
-    favBtn.textContent = on ? '★ Favoritado' : '☆ Favoritar';
+    favBtn.textContent = on ? '★ Favorited' : '☆ Favorite';
     favBtn.classList.toggle('on', on);
     favBtn.setAttribute('aria-pressed', on);
   };
@@ -338,7 +347,7 @@ function renderDetail(id) {
 
 async function renderArchive() {
   showOnly(els.archive);
-  els.archiveList.innerHTML = '<p class="empty">Carregando…</p>';
+  els.archiveList.innerHTML = '<p class="empty">Loading…</p>';
   try {
     const index = await loadJSON('archive/index.json');
     if (!index.dates?.length) throw new Error('empty');
@@ -348,12 +357,12 @@ async function renderArchive() {
       btn.className = 'archive-item';
       btn.innerHTML = `
         <span class="archive-date">${formatDate(date + 'T12:00:00', { dateStyle: 'full' })}</span>
-        <span class="archive-count">${total_items} notícias</span>`;
+        <span class="archive-count">${total_items} news items</span>`;
       btn.addEventListener('click', () => { location.hash = ''; loadData(`archive/${date}.json`); });
       els.archiveList.appendChild(btn);
     });
   } catch {
-    els.archiveList.innerHTML = '<p class="empty">Nenhuma edição anterior ainda.</p>';
+    els.archiveList.innerHTML = '<p class="empty">No previous editions yet.</p>';
   }
 }
 

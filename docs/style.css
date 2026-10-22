@@ -247,6 +247,16 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 }
 .btn-fav:hover { color: var(--text); border-color: var(--muted); }
 .btn-fav.on { color: #111214; background: var(--accent); border-color: var(--accent); }
+
+.detail-video {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: none;
+  border-radius: var(--radius);
+  margin-bottom: 18px;
+  background: #000;
+}
 .fav-tag { color: var(--accent); font-size: .85rem; }
 .tab-btn.active[data-theme="favorites"] { color: #111214; }
 

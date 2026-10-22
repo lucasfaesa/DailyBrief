@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#111214" />
-  <meta name="description" content="Resumo diário de notícias gerado por IA" />
+  <meta name="description" content="AI-generated daily news digest" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="DailyBrief" />
@@ -27,35 +27,35 @@
         <span id="generated-at" class="generated-at"></span>
       </a>
       <div class="header-actions">
-        <button id="btn-install" class="btn-icon hidden" title="Instalar app" aria-label="Instalar app">⤓</button>
-        <button id="btn-archive" class="btn-icon" title="Edições anteriores" aria-label="Edições anteriores">Arquivo</button>
+        <button id="btn-install" class="btn-icon hidden" title="Install app" aria-label="Install app">⤓</button>
+        <button id="btn-archive" class="btn-icon" title="Previous editions" aria-label="Previous editions">Archive</button>
       </div>
     </div>
-    <nav id="theme-tabs" class="theme-tabs" role="tablist" aria-label="Temas"></nav>
+    <nav id="theme-tabs" class="theme-tabs" role="tablist" aria-label="Themes"></nav>
   </header>
 
   <main id="app-main">
 
     <div id="loading" class="loading-screen" aria-live="polite">
       <div class="spinner"></div>
-      <p>Carregando notícias…</p>
+      <p>Loading news…</p>
     </div>
 
     <div id="error-screen" class="hidden error-screen" role="alert">
-      <p id="error-msg">Não foi possível carregar as notícias.</p>
-      <button onclick="App.loadData()" class="btn-primary">Tentar de novo</button>
+      <p id="error-msg">Could not load the news.</p>
+      <button onclick="App.loadData()" class="btn-primary">Try again</button>
     </div>
 
     <div id="home-view" class="hidden"></div>
 
-    <div id="detail-view" class="hidden detail-view" role="region" aria-label="Detalhes da notícia">
-      <button class="btn-back" onclick="App.goHome()">← Voltar</button>
+    <div id="detail-view" class="hidden detail-view" role="region" aria-label="News details">
+      <button class="btn-back" onclick="App.goHome()">← Back</button>
       <article id="detail-content"></article>
     </div>
 
-    <div id="archive-view" class="hidden archive-view" role="region" aria-label="Arquivo">
-      <button class="btn-back" onclick="App.goHome()">← Voltar</button>
-      <h2 class="page-title">Edições anteriores</h2>
+    <div id="archive-view" class="hidden archive-view" role="region" aria-label="Archive">
+      <button class="btn-back" onclick="App.goHome()">← Back</button>
+      <h2 class="page-title">Previous editions</h2>
       <div id="archive-list" class="archive-list"></div>
     </div>
 

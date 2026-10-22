@@ -29,8 +29,14 @@ def make_item(
     comments: list[str] | None = None,
     description: str = "",
     category_hint: str = "others",
+    video: dict | None = None,
 ) -> dict[str, Any]:
-    """Creates a normalized news item."""
+    """Creates a normalized news item.
+
+    `video`, when set, is {"type": "video"|"iframe", "url": "..."} — a video that
+    IS the item's content (a self-hosted clip or an embedded player), not an
+    unrelated video elsewhere on the source page.
+    """
     # Stable 12-char ID derived from URL
     item_id = hashlib.sha1(url.encode()).hexdigest()[:12]
     return {
@@ -42,6 +48,7 @@ def make_item(
         "comments": comments or [],
         "description": description.strip(),
         "category_hint": category_hint,
+        "video": video,
     }
 
 
@@ -134,8 +141,33 @@ def _reddit_wait(resp: requests.Response) -> None:
         time.sleep(float(resp.headers.get("x-ratelimit-reset", 60)) + 1)
 
 
+_YT_RE = re.compile(r"(?:youtube\.com/watch\?v=|youtu\.be/)([\w-]+)")
+_VIMEO_RE = re.compile(r"vimeo\.com/(\d+)")
+
+
+def _reddit_video(post: dict) -> dict | None:
+    """Only the post's own video: a self-hosted v.redd.it clip, or a link post whose
+    target IS a YouTube/Vimeo video (not just a page that happens to contain one)."""
+    reddit_video = (post.get("media") or {}).get("reddit_video") or {}
+    if post.get("is_video") and reddit_video.get("fallback_url"):
+        # ponytail: fallback_url is video-only (Reddit serves audio as a separate DASH
+        # track); stitch dash_url via hls.js if silent playback becomes a complaint
+        return {"type": "video", "url": reddit_video["fallback_url"]}
+    if post.get("post_hint") == "rich:video":
+        url = post.get("url_overridden_by_dest") or post.get("url") or ""
+        m = _YT_RE.search(url)
+        if m:
+            return {"type": "iframe", "url": f"https://www.youtube.com/embed/{m.group(1)}"}
+        m = _VIMEO_RE.search(url)
+        if m:
+            return {"type": "iframe", "url": f"https://player.vimeo.com/video/{m.group(1)}"}
+    return None
+
+
 def collect_reddit(cfg: dict) -> list[dict]:
-    """Collects top posts via Reddit RSS, paced to the unauthenticated rate limit (no comments: each costs a minute)."""
+    """Collects top posts via Reddit's JSON listing, paced to the unauthenticated rate
+    limit (no comments: each costs a minute). JSON (vs RSS) also carries native video
+    fields (is_video/media, post_hint) at no extra request cost."""
     ua = cfg["reddit"]["user_agent"]
     limit_per: int = cfg["collection"]["max_items_per_source"]
     lookback: int = cfg["collection"]["lookback_hours"]
@@ -146,33 +178,39 @@ def collect_reddit(cfg: dict) -> list[dict]:
 
     for sub_cfg in cfg["reddit"]["subreddits"]:
         sub = sub_cfg["name"]
-        rss_url = f"https://www.reddit.com/r/{sub}/top/.rss?t=day&limit={limit_per}"
+        json_url = f"https://www.reddit.com/r/{sub}/top/.json?t=day&limit={limit_per}"
         try:
-            resp = requests.get(rss_url, headers=headers, timeout=15)
+            resp = requests.get(json_url, headers=headers, timeout=15)
         except requests.RequestException as exc:
             logger.warning("Reddit r/%s failed: %s", sub, exc)
             continue
         if resp.status_code == 429:
             _reddit_wait(resp)
-            resp = requests.get(rss_url, headers=headers, timeout=15)
+            resp = requests.get(json_url, headers=headers, timeout=15)
         _reddit_wait(resp)
         if not resp.ok:
             logger.warning("Reddit r/%s: HTTP %d", sub, resp.status_code)
             continue
-        feed = feedparser.parse(resp.content)
+        try:
+            children = resp.json()["data"]["children"]
+        except Exception as exc:
+            logger.warning("Reddit r/%s: bad JSON response: %s", sub, exc)
+            continue
 
-        for entry in feed.entries[:limit_per]:
-            pub_ts = calendar.timegm(entry.published_parsed) if entry.get("published_parsed") else None
+        for child in children[:limit_per]:
+            post = child.get("data") or {}
+            pub_ts = post.get("created_utc")
             if not _within(pub_ts, cutoff):
                 continue
 
-            link = entry.get("link", "")
-            title = entry.get("title", "")
+            permalink = post.get("permalink", "")
+            link = f"https://www.reddit.com{permalink}" if permalink else ""
+            title = post.get("title", "")
             if not link or not title:
                 continue
 
             published = datetime.fromtimestamp(pub_ts, tz=timezone.utc) if pub_ts else None
-            description = entry.get("summary", "")[:500]
+            description = (post.get("selftext") or "")[:500]
             items.append(make_item(
                 url=link,
                 title=title,
@@ -180,6 +218,7 @@ def collect_reddit(cfg: dict) -> list[dict]:
                 published=published,
                 description=description,
                 category_hint=sub_cfg.get("category_hint", "others"),
+                video=_reddit_video(post),
             ))
 
     logger.info("Reddit: collected %d items", len(items))

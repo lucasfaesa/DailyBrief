@@ -51,3 +51,13 @@ extraction:
 Prompts enforce tighter length limits on extracted text:
 - Classification prompt: `text[:4000]`
 - Detailed summary prompt: `text[:5000]`
+
+## Video Sniffing
+
+Alongside the body-text GET (same request, non-skip-domain items only), `_find_og_video()` reads the page's `og:video`/`og:video:url`/`og:video:secure_url` meta tag and `_classify_video()` turns it into `item["video"]`:
+- Direct `.mp4`/`.webm`/`.mov` URL → `{"type": "video", "url": ...}`.
+- YouTube/Vimeo URL → converted to an embed URL, `{"type": "iframe", "url": ...}`.
+- Any other `og:video` URL → embedded as-is (`iframe`); a site that blocks cross-origin framing just renders blank.
+- No `og:video` tag → `video: null`.
+
+Deliberately uses only `og:video` (the page's own declared video for the content), not a scrape of every `<video>`/`<iframe>` on the page — that would also catch unrelated sidebar/ad players. Reddit items skip this path entirely (reddit.com is a skip-domain) and keep the `video` field `_reddit_video()` set in [[architecture/collect]].
