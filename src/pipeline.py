@@ -62,7 +62,7 @@ THEME_GUIDE = """- national_politics: ONLY Brazilian politics — federal/state 
 - crypto: cryptocurrencies, Bitcoin, Ethereum, blockchain, exchanges, stablecoins, crypto regulation and prices.
 - science: research, space, health studies, environment science.
 - economy: markets, inflation, interest rates, companies' finances, jobs, trade (crypto goes to crypto).
-- concursos: public contests (concursos públicos) and simplified selection processes / temporary contracts (processos seletivos simplificados / contratações temporárias / DT) strictly located in the state of Espírito Santo (ES), Brazil. MUST be specifically for Information Technology (TI/TIC, software development, systems analysis, data, cloud, cybersecurity, network/infra, IT support/technician). Any contest outside Espírito Santo (ES) or for NON-IT roles (general administration, high school/nível médio without IT focus, education, pedagogy, teaching, healthcare, medicine, nursing, engineering other than computer/software, agronomy) or generic institutional announcements/tests (like language proficiency exams) must NOT be categorized here and must receive relevance 1.
+- concursos: public contests (concursos públicos) and simplified selection processes / temporary contracts (processos seletivos simplificados / contratações temporárias / DT) strictly located in the state of Espírito Santo (ES), Brazil, with positions the reader can apply to: IT roles (TI/TIC, software, systems analysis, data, infra, IT support), OR generic nível médio / nível superior roles open to any graduate (bank clerk/técnico bancário, administrative assistant/agente administrativo, analyst roles without a specific degree), including cadastro de reserva. Contests outside ES, or whose roles all require another specific profession (education, pedagogy, teaching, healthcare, medicine, nursing, law, non-computer engineering, agronomy, drivers, lifeguards, guards), or generic institutional notices (like language proficiency exams) must NOT be categorized here and must receive relevance 1.
 - others: everything else (sports, weather, crime, lifestyle)."""
 
 BATCH_PROMPT = """You are an objective news editor for a Brazilian reader.
@@ -79,12 +79,12 @@ Theme definitions (follow strictly, the source hint can be wrong):
 Rules: be strictly factual, use only the given text, no opinions. If the text is only a title, keep the summary short.
 The reader does NOT want gossip: celebrity personal lives, relationships, influencers, reality shows (BBB, A Fazenda), telenovelas/soap operas and their actors, red carpets, "relembre" nostalgia pieces. Give any such article relevance 1 (it will be dropped), whatever its theme.
 For items from Reddit (source starts with "Reddit /r/"): give relevance 1 or 2, regardless of theme or upvotes, to low-effort posts — memes/images, a one-line question asking other users about their experience ("does your X do this?", "anyone else..."), complaints, or shower-thoughts with no real informational content. Keep normal relevance only for Reddit posts with substantive, factual content.
-Target for 'concursos': The reader is an IT Master's graduate located in Espírito Santo (ES). Keep EXCLUSIVELY opportunities in Espírito Santo (ES) for Information Technology (TI/TIC: software developers, programmers, data analysts/engineers, IT infrastructure, network/database administration, IT support, systems analysis). Give relevance 1 (which DROPS the item entirely) to:
+Target for 'concursos': The reader is an IT Master's graduate located in Espírito Santo (ES). Keep opportunities in Espírito Santo (ES) for IT roles AND for generic nível médio / nível superior roles any graduate can take (técnico bancário, agente/assistente administrativo, generic analyst), including cadastro de reserva. Give relevance 1 (which DROPS the item entirely) to:
   - ANY contest/selection outside Espírito Santo (ES);
-  - ANY contest without IT positions (e.g. general municipal education/pedagogy, general administration, general high school/nível médio, healthcare, civil/sanitary/environmental engineering, agriculture);
+  - ANY contest whose positions all require another specific profession (e.g. teachers/pedagogy, healthcare, law, civil/sanitary/environmental engineering, agriculture, drivers, lifeguards, municipal guards);
   - Generic academic/institutional notices (e.g. language proficiency exams, university calendars).
 For 'judo' and 'bjj': the reader trains in Espírito Santo (ES), Brazil, and only cares about ES championships that haven't happened yet — announcements/openings of an upcoming event (registration opens, dates and venue of a championship that "vai acontecer"/"terá"). Give those relevance 4 or 5. Give relevance 1 (dropped) to: recaps/results of events that already happened (medal counts, "fulano conquista ouro", placements, "N medalhas"), and anything about kids/youth categories (sub-11, sub-13, kids, infantil, juvenil) regardless of location. International and Brazilian national-level news about adult/senior competitions (IJF, Olympics, ADCC, major pro events) keeps normal relevance.
-Rate legitimate IT contests/selection processes in ES (e.g., PRODEST, TJES TI, IFES TI, UFES TI, Banestes TI, city hall IT analyst/technician) with relevance 4 or 5.
+Rate IT contests in ES (e.g., PRODEST, TJES TI, IFES TI, UFES TI, city hall IT analyst/technician) and state-level bank/court/agency contests with generic roles (e.g., Banestes, TJES, Sefaz, Detran) with relevance 4 or 5.
 
 {articles}
 """
@@ -113,7 +113,7 @@ Return ONLY a JSON object: {{"groups": [["id1", "id2", ...], ...]}} listing only
 
 # ── Processing Helpers ───────────────────────────────────────────────────
 
-# Keywords that confirm an IT role in a 'concursos' item.
+# Keywords that confirm a role the reader can take in a 'concursos' item: IT, or generic nível médio/superior.
 # Short keywords use regex word boundaries (\b) to avoid false matches inside
 # longer Portuguese words (e.g. "seletivo" contains "ti", "tecnologia" has no "ti"
 # but we still guard against surprises).
@@ -145,13 +145,17 @@ _IT_PHRASE_KWS = [
     "técnico de ti", "técnico em ti",
     "técnico em informática", "tecnico em informatica",
     "banestes ti",
+    # Generic roles open to any graduate
+    "nível médio", "nivel medio", "nível superior", "nivel superior",
+    "bancário", "bancario", "banestes", "banescor",
+    "administrativo", "cadastro de reserva", "cadastro reserva",
 ]
 
 _IT_WB_PATTERN = _re.compile("|".join(_IT_WORD_BOUNDARY_KWS), _re.IGNORECASE)
 
 
-def _is_it_concurso(item: dict) -> bool:
-    """Return True only if a 'concursos' item is clearly IT-related.
+def _is_eligible_concurso(item: dict) -> bool:
+    """Return True only if a 'concursos' item has IT or generic nível médio/superior roles.
 
     Acts as a deterministic safety net after LLM classification, preventing
     non-IT contests from passing through when the LLM ignores the drop rule.
@@ -279,12 +283,12 @@ def process_items(items: list[dict], cfg: dict, router: LLMRouter) -> list[dict]
         if comments_data and isinstance(comments_data.get("comments_summary"), str):
             item["comments_summary"] = comments_data["comments_summary"]
 
-    # Safety net: drop any 'concursos' item that contains no IT keywords,
+    # Safety net: drop any 'concursos' item with no eligible-role keywords,
     # in case the LLM ignored the relevance-1 drop instruction.
     for item in items:
-        if item.get("theme") == "concursos" and not _is_it_concurso(item):
+        if item.get("theme") == "concursos" and not _is_eligible_concurso(item):
             logger.warning(
-                "  → [concursos guard] Non-IT item force-dropped: %s", item["title"][:80]
+                "  → [concursos guard] Ineligible item force-dropped: %s", item["title"][:80]
             )
             item["relevance"] = 1
 

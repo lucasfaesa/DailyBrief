@@ -72,3 +72,7 @@ assert r.generate_json("x") is None  # a: 503 twice, b: fatal
 assert r._exhausted == {"b"}
 assert r.generate_json("x") == {"ok": 1}  # a recovered
 print("router ok")
+
+assert pipeline._is_eligible_concurso({"title": "Banestes divulga novos editais de concurso com salários de até R$ 6,3 mil"})
+assert pipeline._is_eligible_concurso({"title": "Prefeitura abre vaga de analista de TI"})
+assert not pipeline._is_eligible_concurso({"title": "Rio Bananal oferece 120 vagas na Educação"})

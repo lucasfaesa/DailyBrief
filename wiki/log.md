@@ -66,3 +66,4 @@ Translated all documentation, wiki pages, code docstrings/comments, pipeline pro
 ## [2026-10-22] feat | site chrome translated to English (summaries/news stay pt-BR); national/international politics tabs moved last before Favorites
 ## [2026-10-22] fix | judo/bjj prompt: ES boost now only for upcoming-championship announcements, not results recaps or kids/youth news; reddit low-effort posts (memes, "does your X do this?") forced to relevance 1-2
 ## [2026-10-22] feat | inline video on the item's own video (og:video sniff on article pages; v.redd.it/YouTube/Vimeo on Reddit via its JSON listing, same request cost); detail view renders <video>/<iframe>
+## [2026-11-12] fix | concursos: accept generic nível médio/superior ES contests (e.g. Banestes técnico bancário, cadastro reserva), not only IT; guard renamed _is_eligible_concurso with generic-role keywords
